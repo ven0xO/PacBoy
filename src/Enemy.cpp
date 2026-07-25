@@ -137,9 +137,14 @@ void Enemy::update(float timer, int level)
     if (state == State::Scared && timer >= scaredUntil)
     {
         color = color::get_enemy_color(type);
+        state = stateBeforeChange;
     }
     if(isScared && state != State::Dead)
     {
+        if(state != State::Scared)
+        {
+            stateBeforeChange = state;
+        }
         state = State::Scared;
         scaredUntil = timer + 6;
         color = color::blue_color;

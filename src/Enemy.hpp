@@ -57,6 +57,7 @@ public:
 private:
     Type type;
     State state = State::Scatter;
+    State stateBeforeChange{State::Scatter};
 
     glm::vec2 target;
     glm::vec2 scatter_target;
