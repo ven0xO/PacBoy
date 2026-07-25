@@ -25,6 +25,7 @@ set(SOURCES
     src/GameState.cpp
     src/Hud.cpp
     src/PixelFont.cpp
+    src/Game.cpp
 )
 
 # headers

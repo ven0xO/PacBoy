@@ -9,11 +9,7 @@
 
 #include "../external/shader_s.h"
 #include "../external/camera.h"
-#include "Grid.hpp"
-#include "Player.hpp"
-#include "Enemy.hpp"
-#include "GameState.hpp"
-#include "Hud.hpp"
+#include "Game.hpp"
 
 // GLFW callbacks and input handling.
 void processInput(GLFWwindow* window);
@@ -22,7 +18,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
-bool DEV = true;
 
 // Camera
 Camera camera(glm::vec3(0.0f, 5.0f, 10.0f)); 
@@ -35,7 +30,6 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 // Game objects (global for input handling)
-Grid* gameGridPtr = nullptr;
 Player* playerPtr = nullptr;
 
 // Player input timing.
@@ -130,13 +124,9 @@ int main()
         return -1;
     }
 
-    // Load game grid
-    Grid gameGrid;
-    bool success = gameGrid.loadFromFile("./assets/levels/classic_inspired.txt");
-    if(!success)
-    {
-        std::cerr << "Failed to load game grid from file." << std::endl;
-    }
+
+    Game game("./assets/levels/classic_inspired.txt", SCR_WIDTH, SCR_HEIGHT);
+    playerPtr = game.getPlayerPtr();
     
     
     Shader ourShader("./shaders/shader.vs", "./shaders/shader.fs");
@@ -158,47 +148,18 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Create GameState
-    GameState gameState;
-    gameState.setPelletCount(gameGrid.getInitPelletCount());
-    gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());
-
-    // Create Hud
-    Hud hud(SCR_WIDTH, SCR_HEIGHT);
-
-    // Create player and set to starting position
-    glm::vec2 pacmanStart = gameGrid.getPacmanStartPosition();
-    std::cout << "Pacman start position: " << pacmanStart.x << ", " << pacmanStart.y << std::endl;
-    Player player(pacmanStart.x, pacmanStart.y, &gameState);
-    
-    // Set global pointers for input handling
-    gameGridPtr = &gameGrid;
-    playerPtr = &player;
-
-    glm::vec2 ghostSpawn = gameGrid.getGhostSpawnPosition();
-    Enemy red_ghost(Type::Red, &gameGrid, &player, ghostSpawn, &gameState);
-    Enemy pink_ghost(Type::Pink, &gameGrid, &player, ghostSpawn, &gameState);
-    Enemy cyan_ghost(Type::Blue, &gameGrid, &player, ghostSpawn, &gameState);
-    Enemy orange_ghost(Type::Orange, &gameGrid, &player, ghostSpawn, &gameState);
-
-    pink_ghost.set_red_ghost(&red_ghost);
-    cyan_ghost.set_red_ghost(&red_ghost);
-    orange_ghost.set_red_ghost(&red_ghost);
-
-    float invulnerableUntil = 0.0f;
-    float timerOffset = 0.0f;
 
     // Main loop
     while(!glfwWindowShouldClose(window))
     {   
-        float currentFrame = glfwGetTime() - timerOffset;
+        float currentFrame = glfwGetTime() - game.getTimerOffset();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         
         processInput(window);
         // Smoothly follow behind the player based on the current movement direction.
-        glm::vec3 playerPos = glm::vec3(playerPtr->getPosition().x, 0.0f, playerPtr->getPosition().y);
-        glm::vec2 playerDir = playerPtr->getCameraDirection();
+        glm::vec3 playerPos = glm::vec3(game.getPlayerPtr()->getPosition().x, 0.0f, game.getPlayerPtr()->getPosition().y);
+        glm::vec2 playerDir = game.getPlayerPtr()->getCameraDirection();
         glm::vec3 cameraOffset = CAMERA_OFFSET;
 
         if (glm::length(playerDir) > 0.01f)
@@ -221,165 +182,13 @@ int main()
         int viewLoc = glGetUniformLocation(ourShader.ID, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-        
-        player.update(gameGrid);
-
-        int level = gameState.getLevel();
-
-        red_ghost.update(currentFrame, level);
-        pink_ghost.update(currentFrame, level);
-        cyan_ghost.update(currentFrame, level);
-        orange_ghost.update(currentFrame, level);
-
-        if (player.getEnergizer())
-        {
-            player.resetEnergizer();
-        }
-
-        Rect playerRect = player.getPlayerRect();
-
-        bool red_collision = red_ghost.checkCollision(playerRect);
-        bool pink_collision = pink_ghost.checkCollision(playerRect);
-        bool cyan_collision = cyan_ghost.checkCollision(playerRect);
-        bool orange = orange_ghost.checkCollision(playerRect);
-
-        /*
-        if (playerHit && currentFrame >= invulnerableUntil)
-        {
-            gameState.loseLife();
-
-            // Przez 1,5 sekundy nie można ponownie stracić życia.
-            invulnerableUntil = currentFrame + 1.5f;
-
-            if (!gameState.isGameOver())
-            {
-                player.setPosition(pacmanStart);
-            }
-        }*/
-
-        if (red_collision)
-        {
-            State redState = red_ghost.get_state();
-
-            if (redState == State::Scared)
-            {
-                red_ghost.set_state_dead();
-                player.killGhost();
-            }
-            else if (redState != State::Dead && currentFrame >= invulnerableUntil)
-            {
-                gameState.loseLife();
-                invulnerableUntil = currentFrame + 1.5f;
-
-                if (!gameState.isGameOver())
-                {
-                    player.setPosition(pacmanStart);
-                }
-            }
-        }
-
-        if (pink_collision)
-        {
-            State pinkState = pink_ghost.get_state();
-
-            if (pinkState == State::Scared)
-            {
-                pink_ghost.set_state_dead();
-                player.killGhost();
-            }
-            else if (pinkState != State::Dead && currentFrame >= invulnerableUntil)
-            {
-                gameState.loseLife();
-                invulnerableUntil = currentFrame + 1.5f;
-
-                if (!gameState.isGameOver())
-                {
-                    player.setPosition(pacmanStart);
-                }
-            }
-        }
-
-        if (cyan_collision)
-        {
-            State cyanState = cyan_ghost.get_state();
-
-            if (cyanState == State::Scared)
-            {
-                cyan_ghost.set_state_dead();
-                player.killGhost();
-            }
-            else if (cyanState != State::Dead && currentFrame >= invulnerableUntil)
-            {
-                gameState.loseLife();
-                invulnerableUntil = currentFrame + 1.5f;
-
-                if (!gameState.isGameOver())
-                {
-                    player.setPosition(pacmanStart);
-                }
-            }
-        }
-
-        if (orange)
-        {
-            State orangeState = orange_ghost.get_state();
-
-            if (orangeState == State::Scared)
-            {
-                orange_ghost.set_state_dead();
-                player.killGhost();
-            }
-            else if (orangeState != State::Dead && currentFrame >= invulnerableUntil)
-            {
-                gameState.loseLife();
-                invulnerableUntil = currentFrame + 1.5f;
-
-                if (!gameState.isGameOver())
-                {
-                    player.setPosition(pacmanStart);
-                }
-            }
-        }
-
-        gameGrid.render(ourShader, VAO);
-        player.render(ourShader, VAO);
-        if(DEV)
-        {
-            red_ghost.renderTargetBeam(ourShader, VAO);
-            pink_ghost.renderTargetBeam(ourShader, VAO);
-            cyan_ghost.renderTargetBeam(ourShader, VAO);
-            orange_ghost.renderTargetBeam(ourShader, VAO);
-        }
-        red_ghost.render(ourShader, VAO);
-        pink_ghost.render(ourShader, VAO);
-        cyan_ghost.render(ourShader, VAO);
-        orange_ghost.render(ourShader, VAO);
-
-        glDisable(GL_DEPTH_TEST);
-        hud.render(gameState);
-        glEnable(GL_DEPTH_TEST);
+        game.update(currentFrame);
+        game.render(ourShader, VAO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        if(gameState.checkIfNextLevel())
-        {
-            if (gameGrid.loadFromFile("./assets/levels/classic_inspired.txt"))
-            {
-                gameState.setPelletCount(gameGrid.getInitPelletCount());
-                gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());
-
-                player.resetPlayer();
-                red_ghost.resetGhost();
-                pink_ghost.resetGhost();
-                cyan_ghost.resetGhost();
-                orange_ghost.resetGhost();
-
-                lastFrame = 0.0f;
-                timerOffset += currentFrame;
-                invulnerableUntil = 0.0f;
-            }
-        }
+        game.nextLevel(lastFrame, currentFrame);
     }
 
     glDeleteVertexArrays(1, &VAO);
@@ -407,7 +216,7 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 
     // Arrow keys queue grid movement relative to the camera.
-    if (playerPtr && gameGridPtr) {
+    if (playerPtr) {
         float currentTime = glfwGetTime();
         if (currentTime - lastMoveTime > MOVE_COOLDOWN) {
             bool keyUp = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
