@@ -29,18 +29,6 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-// Game objects (global for input handling)
-Player* playerPtr = nullptr;
-
-// Player input timing.
-float lastMoveTime = 0.0f;
-const float MOVE_COOLDOWN = 0.05f;
-
-// Previous key states are used to detect key presses instead of held keys.
-bool prevKeyUp = false;
-bool prevKeyDown = false;
-bool prevKeyLeft = false;
-bool prevKeyRight = false;
 void checkFileExists(const std::string& path) {
     std::ifstream file(path);
     if (!file) {
@@ -126,8 +114,7 @@ int main()
 
 
     Game game("./assets/levels/classic_inspired.txt", SCR_WIDTH, SCR_HEIGHT);
-    playerPtr = game.getPlayerPtr();
-    
+
     
     Shader ourShader("./shaders/shader.vs", "./shaders/shader.fs");
     glEnable(GL_DEPTH_TEST);
@@ -157,6 +144,7 @@ int main()
         lastFrame = currentFrame;
         
         processInput(window);
+        game.processPlayerInput(window);
         // Smoothly follow behind the player based on the current movement direction.
         glm::vec3 playerPos = glm::vec3(game.getPlayerPtr()->getPosition().x, 0.0f, game.getPlayerPtr()->getPosition().y);
         glm::vec2 playerDir = game.getPlayerPtr()->getCameraDirection();
@@ -204,49 +192,6 @@ void processInput(GLFWwindow* window)
     if(glfwGetKey(window, GLFW_KEY_ESCAPE))
     {
         glfwSetWindowShouldClose(window, true);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-
-    // Arrow keys queue grid movement relative to the camera.
-    if (playerPtr) {
-        float currentTime = glfwGetTime();
-        if (currentTime - lastMoveTime > MOVE_COOLDOWN) {
-            bool keyUp = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
-            bool keyDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
-            bool keyLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
-            bool keyRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
-
-            // Only handle transitions from released to pressed.
-            if (keyUp && !prevKeyUp) {
-                playerPtr->setDirection(Direction::Forward);
-                lastMoveTime = currentTime;
-            }
-            else if (keyDown && !prevKeyDown) {
-                playerPtr->setDirection(Direction::Back);
-                lastMoveTime = currentTime;
-            }
-            else if (keyLeft && !prevKeyLeft) {
-                playerPtr->setDirection(Direction::Left);
-                lastMoveTime = currentTime;
-            }
-            else if (keyRight && !prevKeyRight) {
-                playerPtr->setDirection(Direction::Right);
-                lastMoveTime = currentTime;
-            }
-
-            prevKeyUp = keyUp;
-            prevKeyDown = keyDown;
-            prevKeyLeft = keyLeft;
-            prevKeyRight = keyRight;
-        }
     }
 }
 

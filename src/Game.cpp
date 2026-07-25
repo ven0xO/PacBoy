@@ -1,4 +1,5 @@
 #include "Game.hpp"
+#include <GLFW/glfw3.h>
 
 Game::Game(const std::string& map_path, int screen_width, int screen_height) 
             : hud(screen_width, screen_height),
@@ -145,4 +146,45 @@ void Game::checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float c
             playerPtr->setPosition(gameGrid.getPacmanStartPosition());
         }
     }
+}
+
+void Game::processPlayerInput(GLFWwindow* window)
+{
+    float currentTime = static_cast<float>(glfwGetTime());
+
+    if (currentTime - lastMoveTime <= MOVE_COOLDOWN)
+    {
+        return;
+    }
+
+    bool keyUp = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
+    bool keyDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
+    bool keyLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
+    bool keyRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
+
+    if (keyUp && !prevKeyUp)
+    {
+        player->setDirection(Direction::Forward);
+        lastMoveTime = currentTime;
+    }
+    else if (keyDown && !prevKeyDown)
+    {
+        player->setDirection(Direction::Back);
+        lastMoveTime = currentTime;
+    }
+    else if (keyLeft && !prevKeyLeft)
+    {
+        player->setDirection(Direction::Left);
+        lastMoveTime = currentTime;
+    }
+    else if (keyRight && !prevKeyRight)
+    {
+        player->setDirection(Direction::Right);
+        lastMoveTime = currentTime;
+    }
+
+    prevKeyUp = keyUp;
+    prevKeyDown = keyDown;
+    prevKeyLeft = keyLeft;
+    prevKeyRight = keyRight;
 }

@@ -11,6 +11,7 @@
 #include <string>
 #include <glm/glm.hpp>
 //...
+struct GLFWwindow;
 
 class Game
 {
@@ -23,6 +24,7 @@ public:
     void update(const float currentFrame);
     void render(Shader& shader, unsigned int cubeVAO);
     void nextLevel(float& lastFrame, const float currentFrame);
+    void processPlayerInput(GLFWwindow* window);
 
 private:
     Grid gameGrid;
@@ -42,4 +44,12 @@ private:
     const bool DEV{true};
 
     void checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float currentFrame);
+
+    float lastMoveTime{0.0f};
+    static constexpr float MOVE_COOLDOWN{0.05f};
+
+    bool prevKeyUp{false};
+    bool prevKeyDown{false};
+    bool prevKeyLeft{false};
+    bool prevKeyRight{false};
 };
