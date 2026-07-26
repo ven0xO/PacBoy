@@ -168,3 +168,49 @@ void Hud::renderText(
         cursorX += (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) * scale;
     }
 }
+
+void Hud::renderMainMenu()
+{
+    drawRectangle(
+        0.0f,
+        0.0f,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        glm::vec3(0.0f, 0.0f, 0.0f)
+    );
+
+    renderText(
+        "PACBOY",
+        255.0f,
+        120.0f,
+        8.0f
+    );
+
+    renderText(
+        " START GAME",
+        255.0f,
+        300.0f,
+        4.0f
+    );
+
+    renderText(
+        " SCOREBOARD",
+        255.0f,
+        360.0f,
+        4.0f
+    );
+
+    renderText(
+        "USE ARROWS AND ENTER",
+        220.0f,
+        500.0f,
+        3.0f
+    );
+    
+    renderText(
+        ">",
+        235.0f,
+        300.0f + selected * 60,
+        4.0f
+    );
+}

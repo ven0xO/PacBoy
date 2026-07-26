@@ -13,6 +13,23 @@
 //...
 struct GLFWwindow;
 
+enum class GamePhase
+{
+    MainMenu,
+    Scoreboard,
+    Ready,
+    Playing,
+    Paused,
+    LevelComplete,
+    GameOver
+};
+
+enum class MainMenuOption
+{
+    StartGame,
+    Scoreboard
+};
+
 class Game
 {
 public:
@@ -25,12 +42,18 @@ public:
     void render(Shader& shader, unsigned int cubeVAO);
     void nextLevel(float& lastFrame, const float currentFrame);
     void processPlayerInput(GLFWwindow* window);
+    void renderMainMenu();
 
 private:
     Grid gameGrid;
     GameState gameState;
     std::unique_ptr<Player> player;
     Hud hud;
+    GamePhase phase{GamePhase::MainMenu};
+
+    MainMenuOption selectedMenuOption{
+        MainMenuOption::StartGame
+    };
 
     std::unique_ptr<Enemy> redEnemy;
     std::unique_ptr<Enemy> pinkEnemy;

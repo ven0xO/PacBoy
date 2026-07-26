@@ -1,5 +1,6 @@
 #include "Game.hpp"
 #include <GLFW/glfw3.h>
+#include <algorithm>
 
 Game::Game(const std::string& map_path, int screen_width, int screen_height) 
             : hud(screen_width, screen_height),
@@ -58,6 +59,8 @@ Game::Game(const std::string& map_path, int screen_width, int screen_height)
 
 void Game::update(const float currentFrame)
 {
+    if(phase != GamePhase::Playing) return;
+
     player->update(gameGrid);
     
     int level = gameState.getLevel();
@@ -84,6 +87,15 @@ void Game::update(const float currentFrame)
 
 void Game::render(Shader& shader, unsigned int cubeVAO)
 {
+
+    if (phase == GamePhase::MainMenu)
+    {
+        glDisable(GL_DEPTH_TEST);
+        hud.renderMainMenu();
+        glEnable(GL_DEPTH_TEST);
+        return;
+    }
+
     gameGrid.render(shader, cubeVAO);
     player->render(shader, cubeVAO);
 
@@ -107,6 +119,9 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
 
 void Game::nextLevel(float& lastFrame, const float currentFrame)
 {
+    if(phase != GamePhase::Playing) return;
+
+    
     if(gameState.checkIfNextLevel())
     {
         if(gameGrid.loadFromFile(mapPath))
@@ -150,6 +165,9 @@ void Game::checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float c
 
 void Game::processPlayerInput(GLFWwindow* window)
 {
+    //if(phase != GamePhase::Playing) return;
+
+
     float currentTime = static_cast<float>(glfwGetTime());
 
     if (currentTime - lastMoveTime <= MOVE_COOLDOWN)
@@ -161,27 +179,41 @@ void Game::processPlayerInput(GLFWwindow* window)
     bool keyDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
     bool keyLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
     bool keyRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
-
-    if (keyUp && !prevKeyUp)
+    if(phase == GamePhase::Playing)
     {
-        player->setDirection(Direction::Forward);
-        lastMoveTime = currentTime;
+        if (keyUp && !prevKeyUp)
+        {
+            player->setDirection(Direction::Forward);
+            lastMoveTime = currentTime;
+        }
+        else if (keyDown && !prevKeyDown)
+        {
+            player->setDirection(Direction::Back);
+            lastMoveTime = currentTime;
+        }
+        else if (keyLeft && !prevKeyLeft)
+        {
+            player->setDirection(Direction::Left);
+            lastMoveTime = currentTime;
+        }
+        else if (keyRight && !prevKeyRight)
+        {
+            player->setDirection(Direction::Right);
+            lastMoveTime = currentTime;
+        }
     }
-    else if (keyDown && !prevKeyDown)
+    else if(phase == GamePhase::MainMenu)
     {
-        player->setDirection(Direction::Back);
-        lastMoveTime = currentTime;
+        if (keyUp && !prevKeyUp)
+        {
+            hud.setSelected(std::max(0, hud.getSelected() - 1));
+        }
+        else if (keyDown && !prevKeyDown)
+        {
+            hud.setSelected(std::min(hud.getSelectedLen() - 1, hud.getSelected() + 1));
+        }
     }
-    else if (keyLeft && !prevKeyLeft)
-    {
-        player->setDirection(Direction::Left);
-        lastMoveTime = currentTime;
-    }
-    else if (keyRight && !prevKeyRight)
-    {
-        player->setDirection(Direction::Right);
-        lastMoveTime = currentTime;
-    }
+    
 
     prevKeyUp = keyUp;
     prevKeyDown = keyDown;
