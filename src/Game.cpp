@@ -179,6 +179,7 @@ void Game::processPlayerInput(GLFWwindow* window)
     bool keyDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
     bool keyLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
     bool keyRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
+    bool keyEnter = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
     if(phase == GamePhase::Playing)
     {
         if (keyUp && !prevKeyUp)
@@ -206,8 +207,7 @@ void Game::processPlayerInput(GLFWwindow* window)
     {
         int selected = static_cast<int>(selectedMenuOption);
 
-        const int optionCount =
-            static_cast<int>(MainMenuOption::Count);
+        const int optionCount = static_cast<int>(MainMenuOption::Count);
 
         if (keyUp && !prevKeyUp)
         {
@@ -218,8 +218,19 @@ void Game::processPlayerInput(GLFWwindow* window)
             selected = std::min(optionCount - 1, selected + 1);
         }
 
-        selectedMenuOption =
-            static_cast<MainMenuOption>(selected);
+        selectedMenuOption = static_cast<MainMenuOption>(selected);
+
+        if(keyEnter && !prevKeyEnter)
+        {
+            if(selectedMenuOption == MainMenuOption::StartGame)
+            {
+                phase = GamePhase::Playing;
+            }
+            else if (selectedMenuOption == MainMenuOption::Scoreboard)
+            {
+                phase = GamePhase::Scoreboard;
+            }
+        }
     }
     
 

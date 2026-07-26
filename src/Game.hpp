@@ -75,4 +75,5 @@ private:
     bool prevKeyDown{false};
     bool prevKeyLeft{false};
     bool prevKeyRight{false};
+    bool prevKeyEnter{false};
 };
