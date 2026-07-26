@@ -206,6 +206,13 @@ void Hud::renderMainMenu(int selected)
         500.0f,
         3.0f
     );
+
+    renderText(
+        "PRESS ESC TO EXIT",
+        295.0f,
+        550.0f,
+        2.0f
+    );
     
     renderText(
         ">",
