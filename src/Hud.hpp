@@ -13,10 +13,7 @@ public:
     Hud(int widthi, int heighti);
 
     void render(const GameState& state);
-    void renderMainMenu();
-    void setSelected(int num) { selected = num; }
-    int getSelected() const { return selected; }
-    int getSelectedLen() const { return MENUNUM; }
+    void renderMainMenu(int selected);
 
 private:
     void renderText(
@@ -38,6 +35,4 @@ private:
     Shader shader;
     int width;
     int height;
-    int selected{0};
-    const int MENUNUM{2};
 };

@@ -27,7 +27,8 @@ enum class GamePhase
 enum class MainMenuOption
 {
     StartGame,
-    Scoreboard
+    Scoreboard,
+    Count
 };
 
 class Game
@@ -42,7 +43,6 @@ public:
     void render(Shader& shader, unsigned int cubeVAO);
     void nextLevel(float& lastFrame, const float currentFrame);
     void processPlayerInput(GLFWwindow* window);
-    void renderMainMenu();
 
 private:
     Grid gameGrid;

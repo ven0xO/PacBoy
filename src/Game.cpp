@@ -91,7 +91,7 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
     if (phase == GamePhase::MainMenu)
     {
         glDisable(GL_DEPTH_TEST);
-        hud.renderMainMenu();
+        hud.renderMainMenu(static_cast<int>(selectedMenuOption));
         glEnable(GL_DEPTH_TEST);
         return;
     }
@@ -204,14 +204,22 @@ void Game::processPlayerInput(GLFWwindow* window)
     }
     else if(phase == GamePhase::MainMenu)
     {
+        int selected = static_cast<int>(selectedMenuOption);
+
+        const int optionCount =
+            static_cast<int>(MainMenuOption::Count);
+
         if (keyUp && !prevKeyUp)
         {
-            hud.setSelected(std::max(0, hud.getSelected() - 1));
+            selected = std::max(0, selected - 1);
         }
         else if (keyDown && !prevKeyDown)
         {
-            hud.setSelected(std::min(hud.getSelectedLen() - 1, hud.getSelected() + 1));
+            selected = std::min(optionCount - 1, selected + 1);
         }
+
+        selectedMenuOption =
+            static_cast<MainMenuOption>(selected);
     }
     
 

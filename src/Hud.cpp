@@ -169,7 +169,7 @@ void Hud::renderText(
     }
 }
 
-void Hud::renderMainMenu()
+void Hud::renderMainMenu(int selected)
 {
     drawRectangle(
         0.0f,
