@@ -104,6 +104,14 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
         return;
     }
 
+    if (phase == GamePhase::Scoreboard)
+    {
+        glDisable(GL_DEPTH_TEST);
+        hud.renderScoreboard(scoreboard);
+        glEnable(GL_DEPTH_TEST);
+        return;
+    }
+
     gameGrid.render(shader, cubeVAO);
     player->render(shader, cubeVAO);
 
@@ -292,6 +300,13 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
             {
                 phase = GamePhase::MainMenu;
             }
+        }
+    }
+    else if(phase == GamePhase::Scoreboard)
+    {
+        if(keyEnter && !prevKeyEnter)
+        {
+            phase = GamePhase::MainMenu;
         }
     }
     

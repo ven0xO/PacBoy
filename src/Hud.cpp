@@ -1,6 +1,7 @@
 #include "Hud.hpp"
 #include "GameState.hpp"
 #include "PixelFont.hpp"
+#include "Scoreboard.hpp"
 #include "../external/GLAD/include/glad/glad.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -332,5 +333,234 @@ void Hud::renderPause(int selected)
         550.0f,
         informationScale,
         glm::vec3(0.85f, 0.85f, 0.85f)
+    );
+}
+
+void Hud::renderScoreboard(const Scoreboard& scoreboard)
+{
+    const glm::vec3 yellow(1.0f, 1.0f, 0.0f);
+    const glm::vec3 blue(0.0f, 0.35f, 1.0f);
+    const glm::vec3 panelColor(0.02f, 0.04f, 0.12f);
+    const glm::vec3 lightGray(0.88f, 0.88f, 0.88f);
+
+    drawRectangle(
+        0.0f,
+        0.0f,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        glm::vec3(0.0f, 0.0f, 0.0f)
+    );
+
+    const auto textWidth = [](const std::string& text, float scale)
+    {
+        return
+            (
+                static_cast<float>(text.size()) *
+                (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
+                PixelFont::GLYPH_SPACING
+            ) * scale;
+    };
+
+    const auto centeredX =
+        [this, &textWidth](const std::string& text, float scale)
+    {
+        return
+            (static_cast<float>(width) - textWidth(text, scale)) / 2.0f;
+    };
+
+    const std::string title{"HIGH SCORES"};
+    constexpr float titleScale{7.0f};
+
+    renderText(
+        title,
+        centeredX(title, titleScale),
+        42.0f,
+        titleScale,
+        yellow
+    );
+
+    drawRectangle(
+        105.0f,
+        122.0f,
+        590.0f,
+        356.0f,
+        blue
+    );
+
+    drawRectangle(
+        108.0f,
+        125.0f,
+        584.0f,
+        350.0f,
+        panelColor
+    );
+
+    constexpr float rowScale{3.0f};
+
+    renderText(
+        "RANK",
+        192.0f - textWidth("RANK", rowScale),
+        140.0f,
+        rowScale,
+        blue
+    );
+
+    renderText(
+        "PLAYER",
+        230.0f,
+        140.0f,
+        rowScale,
+        blue
+    );
+
+    renderText(
+        "SCORE",
+        660.0f - textWidth("SCORE", rowScale),
+        140.0f,
+        rowScale,
+        blue
+    );
+
+    drawRectangle(
+        125.0f,
+        169.0f,
+        550.0f,
+        3.0f,
+        blue
+    );
+
+    const auto& entries = scoreboard.getScoreEntries();
+
+    if (entries.empty())
+    {
+        const std::string emptyMessage{"NO SCORES YET"};
+        constexpr float emptyScale{4.0f};
+
+        renderText(
+            emptyMessage,
+            centeredX(emptyMessage, emptyScale),
+            270.0f,
+            emptyScale,
+            lightGray
+        );
+    }
+    else
+    {
+        for (std::size_t i = 0; i < entries.size() && i < 10; i++)
+        {
+            const float rowY =
+                183.0f + static_cast<float>(i) * 28.0f;
+
+            if (i % 2 == 0)
+            {
+                drawRectangle(
+                    120.0f,
+                    rowY - 3.0f,
+                    560.0f,
+                    27.0f,
+                    glm::vec3(0.035f, 0.065f, 0.17f)
+                );
+            }
+
+            glm::vec3 rowColor = lightGray;
+
+            if (i == 0)
+            {
+                rowColor = yellow;
+            }
+            else if (i == 1)
+            {
+                rowColor = glm::vec3(0.65f, 0.9f, 1.0f);
+            }
+            else if (i == 2)
+            {
+                rowColor = glm::vec3(1.0f, 0.55f, 0.2f);
+            }
+
+            const std::string rank = std::to_string(i + 1);
+            const std::string playerName = entries[i].name.substr(0, 12);
+            const std::string score = std::to_string(entries[i].score);
+
+            renderText(
+                rank,
+                180.0f - textWidth(rank, rowScale),
+                rowY,
+                rowScale,
+                rowColor
+            );
+
+            renderText(
+                playerName,
+                230.0f,
+                rowY,
+                rowScale,
+                rowColor
+            );
+
+            renderText(
+                score,
+                660.0f - textWidth(score, rowScale),
+                rowY,
+                rowScale,
+                rowColor
+            );
+        }
+    }
+
+    constexpr float buttonX{210.0f};
+    constexpr float buttonY{512.0f};
+    constexpr float buttonWidth{380.0f};
+    constexpr float buttonHeight{48.0f};
+    constexpr float borderThickness{2.0f};
+
+    drawRectangle(
+        buttonX,
+        buttonY,
+        buttonWidth,
+        buttonHeight,
+        glm::vec3(0.02f, 0.08f, 0.22f)
+    );
+
+    drawRectangle(
+        buttonX,
+        buttonY,
+        buttonWidth,
+        borderThickness,
+        blue
+    );
+
+    drawRectangle(
+        buttonX,
+        buttonY + buttonHeight - borderThickness,
+        buttonWidth,
+        borderThickness,
+        blue
+    );
+
+    drawRectangle(
+        buttonX,
+        buttonY,
+        borderThickness,
+        buttonHeight,
+        blue
+    );
+
+    drawRectangle(
+        buttonX + buttonWidth - borderThickness,
+        buttonY,
+        borderThickness,
+        buttonHeight,
+        blue
+    );
+
+    const std::string returnButton{"> RETURN TO MENU <"};
+    constexpr float buttonScale{3.0f};
+
+    renderText(
+        returnButton,
+        centeredX(returnButton, buttonScale),
+        526.0f,
+        buttonScale,
+        yellow
     );
 }

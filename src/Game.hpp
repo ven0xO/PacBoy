@@ -6,6 +6,7 @@
 #include "GameState.hpp"
 #include "Hud.hpp"
 #include "Rect.hpp"
+#include "Scoreboard.hpp"
 
 #include <memory>
 #include <string>
@@ -56,6 +57,7 @@ private:
     GameState gameState;
     std::unique_ptr<Player> player;
     Hud hud;
+    Scoreboard scoreboard{"./assets/scores/scores.json"};
     GamePhase phase{GamePhase::MainMenu};
 
     MainMenuOption selectedMenuOption{

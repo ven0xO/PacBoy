@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.14)
 project(PacBoy VERSION 0.1.0)
 
 # C++ 17 as standard
@@ -15,6 +15,15 @@ set(CMAKE_EXECUTABLE_SUFFIX ".exe")
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
 
+include(FetchContent)
+
+FetchContent_Declare(
+    json
+    URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+)
+
+FetchContent_MakeAvailable(json)
+
 # sources
 set(SOURCES 
     src/main.cpp
@@ -26,6 +35,7 @@ set(SOURCES
     src/Hud.cpp
     src/PixelFont.cpp
     src/Game.cpp
+    src/Scoreboard.cpp
 )
 
 # headers
@@ -38,7 +48,13 @@ include_directories(
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # linking
-target_link_libraries(${PROJECT_NAME} OpenGL::GL glfw dl)
+target_link_libraries(
+    ${PROJECT_NAME}
+    OpenGL::GL
+    glfw
+    dl
+    nlohmann_json::nlohmann_json
+)
 
 # shaders
 file(COPY ${CMAKE_SOURCE_DIR}/shaders DESTINATION ${CMAKE_SOURCE_DIR})

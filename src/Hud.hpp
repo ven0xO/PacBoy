@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 class GameState;
+class Scoreboard;
 class Shader;
 
 class Hud
@@ -16,6 +17,7 @@ public:
     void renderMainMenu(int selected);
     void renderReady();
     void renderPause(int selected);
+    void renderScoreboard(const Scoreboard& scoreboard);
 
 private:
     void renderText(
