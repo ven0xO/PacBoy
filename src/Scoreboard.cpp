@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <system_error>
 #include <nlohmann/json.hpp>
 
 Scoreboard::Scoreboard(const std::string& path)
@@ -54,24 +55,54 @@ void Scoreboard::loadFromFile()
 {
     std::ifstream file(filePath);
 
-    if(!file.is_open())
+    if (!file.is_open())
     {
-        std::filesystem::create_directories(
-            std::filesystem::path(filePath).parent_path()
-        );
+        std::filesystem::path directory = std::filesystem::path(filePath).parent_path();
+
+        std::error_code error;
+
+        if (!directory.empty())
+        {
+            std::filesystem::create_directories(directory, error);
+        }
+
+        if (error)
+        {
+            std::cerr
+                << "Cannot create scoreboard directory: "
+                << error.message() << '\n';
+            return;
+        }
+
         saveToFile();
         return;
     }
 
-    nlohmann::json data;
-    file >> data;
-
-    for (const auto& scoreData : data.at("scores"))
+    try
     {
-        entries.push_back({
-            scoreData.at("name").get<std::string>(),
-            scoreData.at("score").get<int>()
-        });
+        nlohmann::json data;
+        file >> data;
+
+        std::vector<ScoreEntry> loadedEntries;
+
+        for(const auto& scoreData : data.at("scores"))
+        {
+            loadedEntries.push_back({
+                scoreData.at("name").get<std::string>(),
+                scoreData.at("score").get<int>()
+            });
+        }
+
+        entries = loadedEntries;
+    }
+    catch (const nlohmann::json::exception& error)
+    {
+        entries.clear();
+
+        std::cerr
+            << "Failed to load scoreboard '" << filePath
+            << "': " << error.what()
+            << "; using an empty scoreboard.\n";
     }
 }
 
