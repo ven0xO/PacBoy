@@ -212,14 +212,6 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
     //if(phase != GamePhase::Playing) return;
     const bool updateCamera = phase == GamePhase::Ready;
 
-
-    float currentTime = static_cast<float>(glfwGetTime());
-
-    if (currentTime - lastMoveTime <= MOVE_COOLDOWN)
-    {
-        return;
-    }
-
     bool keyUp = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
     bool keyDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
     bool keyLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
@@ -247,22 +239,18 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
         if (keyUp && !prevKeyUp)
         {
             player->setDirection(Direction::Forward, updateCamera);
-            lastMoveTime = currentTime;
         }
         else if (keyDown && !prevKeyDown)
         {
             player->setDirection(Direction::Back, updateCamera);
-            lastMoveTime = currentTime;
         }
         else if (keyLeft && !prevKeyLeft)
         {
             player->setDirection(Direction::Left, updateCamera);
-            lastMoveTime = currentTime;
         }
         else if (keyRight && !prevKeyRight)
         {
             player->setDirection(Direction::Right, updateCamera);
-            lastMoveTime = currentTime;
         }
     }
     else if(phase == GamePhase::MainMenu)

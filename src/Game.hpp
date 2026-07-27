@@ -83,12 +83,9 @@ private:
     std::string enteredName;
     bool initialized{false};
 
-    const bool DEV{true};
+    static constexpr bool DEV{false};
 
     void checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float currentFrame);
-
-    float lastMoveTime{0.0f};
-    static constexpr float MOVE_COOLDOWN{0.05f};
 
     bool prevKeyUp{false};
     bool prevKeyDown{false};
