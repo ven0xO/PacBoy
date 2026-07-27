@@ -192,6 +192,12 @@ void Game::checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float c
         if(!gameState.isGameOver())
         {
             playerPtr->setPosition(gameGrid.getPacmanStartPosition());
+            redEnemy->resetGhost();
+            pinkEnemy->resetGhost();
+            cyanEnemy->resetGhost();
+            orangeEnemy->resetGhost();
+            phase = GamePhase::Ready;
+            readyTimer = currentFrame + 2.0f;
         }
         else
         {
