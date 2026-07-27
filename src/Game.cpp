@@ -59,6 +59,14 @@ Game::Game(const std::string& map_path, int screen_width, int screen_height)
 
 void Game::update(const float currentFrame)
 {
+    if (phase == GamePhase::Ready &&
+        readyTimer > 0.0f &&
+        currentFrame >= readyTimer)
+    {
+        phase = GamePhase::Playing;
+        readyTimer = 0.0f;
+    }
+
     if(phase != GamePhase::Playing) return;
 
     player->update(gameGrid);
@@ -114,6 +122,10 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
 
     glDisable(GL_DEPTH_TEST);
     hud.render(gameState);
+    if(phase == GamePhase::Ready)
+    {
+        hud.renderReady();
+    }
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -163,9 +175,10 @@ void Game::checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float c
     }
 }
 
-void Game::processPlayerInput(GLFWwindow* window)
+void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
 {
     //if(phase != GamePhase::Playing) return;
+    const bool updateCamera = phase == GamePhase::Ready;
 
 
     float currentTime = static_cast<float>(glfwGetTime());
@@ -180,26 +193,26 @@ void Game::processPlayerInput(GLFWwindow* window)
     bool keyLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
     bool keyRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
     bool keyEnter = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
-    if(phase == GamePhase::Playing)
+    if(phase == GamePhase::Playing || phase == GamePhase::Ready)
     {
         if (keyUp && !prevKeyUp)
         {
-            player->setDirection(Direction::Forward);
+            player->setDirection(Direction::Forward, updateCamera);
             lastMoveTime = currentTime;
         }
         else if (keyDown && !prevKeyDown)
         {
-            player->setDirection(Direction::Back);
+            player->setDirection(Direction::Back, updateCamera);
             lastMoveTime = currentTime;
         }
         else if (keyLeft && !prevKeyLeft)
         {
-            player->setDirection(Direction::Left);
+            player->setDirection(Direction::Left, updateCamera);
             lastMoveTime = currentTime;
         }
         else if (keyRight && !prevKeyRight)
         {
-            player->setDirection(Direction::Right);
+            player->setDirection(Direction::Right, updateCamera);
             lastMoveTime = currentTime;
         }
     }
@@ -224,7 +237,8 @@ void Game::processPlayerInput(GLFWwindow* window)
         {
             if(selectedMenuOption == MainMenuOption::StartGame)
             {
-                phase = GamePhase::Playing;
+                phase = GamePhase::Ready;
+                readyTimer = currentFrame + 2.0f;
             }
             else if (selectedMenuOption == MainMenuOption::Scoreboard)
             {

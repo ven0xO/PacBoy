@@ -55,7 +55,7 @@ bool Player::collectPellet(int x, int y, Grid& grid)
     
 }
 
-void Player::setDirection(Direction direct)
+void Player::setDirection(Direction direct, bool updateCamera)
 {
     // Convert camera-relative input into one of the four grid directions.
     glm::vec2 snapped_camera_dir = camera_direction;
@@ -80,6 +80,11 @@ void Player::setDirection(Direction direct)
         case Direction::Right:
             target_direction = glm::vec2(-snapped_camera_dir.y, snapped_camera_dir.x);
             break;
+    }
+    if (updateCamera)
+    {
+        curr_direction = target_direction;
+        camera_direction = target_direction;
     }
 }
 

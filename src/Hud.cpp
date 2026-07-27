@@ -135,11 +135,11 @@ void Hud::renderText(
     const std::string& text,
     float x,
     float y,
-    float scale
+    float scale,
+    glm::vec3 textColor
 )
 {
     float cursorX = x;
-    const glm::vec3 textColor(1.0f, 1.0f, 0.0f);
 
     for (char character : text)
     {
@@ -220,4 +220,45 @@ void Hud::renderMainMenu(int selected)
         300.0f + selected * 60,
         4.0f
     );
+}
+
+void Hud::renderReady()
+{
+    const std::string text{"READY?"};
+    constexpr float scale{8.0f};
+    constexpr float outlineThickness{3.0f};
+
+    const float textWidth =
+        (
+            static_cast<float>(text.size()) *
+            (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
+            PixelFont::GLYPH_SPACING
+        ) * scale;
+
+    const float textHeight = PixelFont::GLYPH_HEIGHT * scale;
+    const float x = (static_cast<float>(width) - textWidth) / 2.0f;
+    const float y = (static_cast<float>(height) - textHeight) / 2.0f;
+
+    const glm::vec3 outlineColor(0.0f, 0.0f, 0.0f);
+
+    for (int offsetY = -1; offsetY <= 1; offsetY++)
+    {
+        for (int offsetX = -1; offsetX <= 1; offsetX++)
+        {
+            if (offsetX == 0 && offsetY == 0)
+            {
+                continue;
+            }
+
+            renderText(
+                text,
+                x + offsetX * outlineThickness,
+                y + offsetY * outlineThickness,
+                scale,
+                outlineColor
+            );
+        }
+    }
+
+    renderText(text, x, y, scale);
 }

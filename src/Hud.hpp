@@ -14,13 +14,15 @@ public:
 
     void render(const GameState& state);
     void renderMainMenu(int selected);
+    void renderReady();
 
 private:
     void renderText(
         const std::string& text,
         float x,
         float y,
-        float scale
+        float scale,
+        glm::vec3 textColor = glm::vec3(1.0f, 1.0f, 0.0f)
     );
     void drawRectangle(
         float x,

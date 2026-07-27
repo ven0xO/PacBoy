@@ -46,7 +46,7 @@ public:
     bool getEnergizer() const { return energizer; }
     void setPosition(float x, float y);
     void setPosition(const glm::vec2& pos);
-    void setDirection(Direction direct);
+    void setDirection(Direction direct, bool updateCamera = false);
     void setEnergizerTrue() { energizer = true; multiplier = 0; }
 
     void render(Shader& shader, unsigned int cubeVAO);

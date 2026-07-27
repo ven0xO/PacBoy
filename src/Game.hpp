@@ -42,7 +42,7 @@ public:
     void update(const float currentFrame);
     void render(Shader& shader, unsigned int cubeVAO);
     void nextLevel(float& lastFrame, const float currentFrame);
-    void processPlayerInput(GLFWwindow* window);
+    void processPlayerInput(GLFWwindow* window, const float currentFrame);
 
 private:
     Grid gameGrid;
@@ -62,6 +62,7 @@ private:
 
     float invulnerableUntil{0.0f};
     float timerOffset{0.0f};
+    float readyTimer{0.0f};
     std::string mapPath;
 
     const bool DEV{true};

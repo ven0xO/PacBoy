@@ -144,7 +144,7 @@ int main()
         lastFrame = currentFrame;
         
         processInput(window);
-        game.processPlayerInput(window);
+        game.processPlayerInput(window, currentFrame);
         // Smoothly follow behind the player based on the current movement direction.
         glm::vec3 playerPos = glm::vec3(game.getPlayerPtr()->getPosition().x, 0.0f, game.getPlayerPtr()->getPosition().y);
         glm::vec2 playerDir = game.getPlayerPtr()->getCameraDirection();
