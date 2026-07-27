@@ -175,6 +175,13 @@ void Hud::renderText(
 
 void Hud::renderMainMenu(int selected)
 {
+    const glm::vec3 yellow(1.0f, 0.85f, 0.0f);
+    const glm::vec3 blue(0.0f, 0.4f, 1.0f);
+    const glm::vec3 darkBlue(0.01f, 0.06f, 0.18f);
+    const glm::vec3 panelColor(0.008f, 0.018f, 0.055f);
+    const glm::vec3 lightGray(0.86f, 0.88f, 0.94f);
+    const glm::vec3 mutedGray(0.42f, 0.46f, 0.55f);
+
     drawRectangle(
         0.0f,
         0.0f,
@@ -183,156 +190,494 @@ void Hud::renderMainMenu(int selected)
         glm::vec3(0.0f, 0.0f, 0.0f)
     );
 
-    renderText(
-        "PACBOY",
-        255.0f,
-        120.0f,
-        8.0f
-    );
-
-    renderText(
-        " START GAME",
-        255.0f,
-        300.0f,
-        4.0f
-    );
-
-    renderText(
-        " SCOREBOARD",
-        255.0f,
-        360.0f,
-        4.0f
-    );
-
-    renderText(
-        "USE ARROWS AND ENTER",
-        220.0f,
-        500.0f,
-        3.0f
-    );
-
-    renderText(
-        "PRESS ESC TO EXIT",
-        295.0f,
-        550.0f,
-        2.0f
-    );
-    
-    renderText(
-        ">",
-        235.0f,
-        300.0f + selected * 60,
-        4.0f
-    );
-}
-
-void Hud::renderReady()
-{
-    const std::string text{"READY?"};
-    constexpr float scale{8.0f};
-    constexpr float outlineThickness{3.0f};
-
-    const float textWidth =
-        (
-            static_cast<float>(text.size()) *
-            (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
-            PixelFont::GLYPH_SPACING
-        ) * scale;
-
-    const float textHeight = PixelFont::GLYPH_HEIGHT * scale;
-    const float x = (static_cast<float>(width) - textWidth) / 2.0f;
-    const float y = (static_cast<float>(height) - textHeight) / 2.0f;
-
-    const glm::vec3 outlineColor(0.0f, 0.0f, 0.0f);
-
-    for (int offsetY = -1; offsetY <= 1; offsetY++)
+    const auto textWidth = [](const std::string& text, float scale)
     {
-        for (int offsetX = -1; offsetX <= 1; offsetX++)
-        {
-            if (offsetX == 0 && offsetY == 0)
-            {
-                continue;
-            }
-
-            renderText(
-                text,
-                x + offsetX * outlineThickness,
-                y + offsetY * outlineThickness,
-                scale,
-                outlineColor
-            );
-        }
-    }
-
-    renderText(text, x, y, scale);
-}
-
-void Hud::renderPause(int selected)
-{
-    drawRectangle(
-        0.0f,
-        0.0f,
-        static_cast<float>(width),
-        static_cast<float>(height),
-        glm::vec3(0.35f, 0.35f, 0.35f),
-        0.65f
-    );
-
-    const std::string title{"PAUSED"};
-    const std::string information{"PRESS ESC TO EXIT THE GAME"};
-    constexpr float titleScale{10.0f};
-    constexpr float optionScale{5.0f};
-    constexpr float informationScale{2.0f};
-    constexpr float optionsX{275.0f};
-    constexpr float firstOptionY{285.0f};
-    constexpr float optionSpacing{75.0f};
-
-    const auto centeredX = [this](const std::string& text, float scale)
-    {
-        const float textWidth =
+        return
             (
                 static_cast<float>(text.size()) *
                 (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
                 PixelFont::GLYPH_SPACING
             ) * scale;
-
-        return (static_cast<float>(width) - textWidth) / 2.0f;
     };
+
+    const auto centeredX =
+        [this, &textWidth](const std::string& text, float scale)
+    {
+        return
+            (static_cast<float>(width) - textWidth(text, scale)) / 2.0f;
+    };
+
+    drawRectangle(
+        50.0f,
+        25.0f,
+        700.0f,
+        550.0f,
+        blue
+    );
+
+    drawRectangle(
+        54.0f,
+        29.0f,
+        692.0f,
+        542.0f,
+        panelColor
+    );
+
+    drawRectangle(
+        88.0f,
+        101.0f,
+        115.0f,
+        3.0f,
+        blue
+    );
+
+    drawRectangle(
+        597.0f,
+        101.0f,
+        115.0f,
+        3.0f,
+        blue
+    );
+
+    const std::string title{"PACBOY"};
+    constexpr float titleScale{9.0f};
+    const float titleX = centeredX(title, titleScale);
 
     renderText(
         title,
-        centeredX(title, titleScale),
-        100.0f,
-        titleScale
+        titleX + 4.0f,
+        69.0f,
+        titleScale,
+        darkBlue
     );
 
     renderText(
+        title,
+        titleX,
+        65.0f,
+        titleScale,
+        yellow
+    );
+
+    const std::string subtitle{"ARCADE EDITION"};
+    constexpr float subtitleScale{2.5f};
+
+    renderText(
+        subtitle,
+        centeredX(subtitle, subtitleScale),
+        145.0f,
+        subtitleScale,
+        lightGray
+    );
+
+    drawRectangle(
+        145.0f,
+        195.0f,
+        510.0f,
+        235.0f,
+        darkBlue
+    );
+
+    drawRectangle(
+        149.0f,
+        199.0f,
+        502.0f,
+        227.0f,
+        glm::vec3(0.012f, 0.03f, 0.09f)
+    );
+
+    const std::string options[]{
+        "START GAME",
+        "SCOREBOARD"
+    };
+
+    constexpr float optionScale{4.5f};
+    constexpr float firstOptionY{235.0f};
+    constexpr float optionSpacing{82.0f};
+
+    for (int option = 0; option < 2; option++)
+    {
+        const float optionY =
+            firstOptionY + option * optionSpacing;
+
+        const bool isSelected = option == selected;
+        const std::string& optionText = options[option];
+        const float optionX = centeredX(optionText, optionScale);
+
+        if (isSelected)
+        {
+            drawRectangle(
+                172.0f,
+                optionY - 13.0f,
+                456.0f,
+                58.0f,
+                darkBlue
+            );
+
+            drawRectangle(
+                172.0f,
+                optionY - 13.0f,
+                456.0f,
+                2.0f,
+                yellow
+            );
+
+            drawRectangle(
+                172.0f,
+                optionY + 43.0f,
+                456.0f,
+                2.0f,
+                yellow
+            );
+        }
+
+        renderText(
+            optionText,
+            optionX,
+            optionY,
+            optionScale,
+            isSelected ? yellow : lightGray
+        );
+
+        if (isSelected)
+        {
+            renderText(
+                ">",
+                optionX - 42.0f,
+                optionY,
+                optionScale,
+                yellow
+            );
+
+            renderText(
+                "<",
+                optionX + textWidth(optionText, optionScale) + 15.0f,
+                optionY,
+                optionScale,
+                yellow
+            );
+        }
+    }
+
+    const std::string navigationHint{"USE ARROWS TO SELECT"};
+    const std::string confirmHint{"ENTER TO CONFIRM"};
+    const std::string exitHint{"ESC TO EXIT"};
+    constexpr float hintScale{2.0f};
+
+    renderText(
+        navigationHint,
+        centeredX(navigationHint, hintScale),
+        460.0f,
+        hintScale,
+        lightGray
+    );
+
+    renderText(
+        confirmHint,
+        centeredX(confirmHint, hintScale),
+        490.0f,
+        hintScale,
+        blue
+    );
+
+    renderText(
+        exitHint,
+        centeredX(exitHint, hintScale),
+        535.0f,
+        hintScale,
+        mutedGray
+    );
+}
+
+void Hud::renderReady()
+{
+    const glm::vec3 yellow(1.0f, 0.85f, 0.0f);
+    const glm::vec3 blue(0.0f, 0.4f, 1.0f);
+    const glm::vec3 darkBlue(0.01f, 0.04f, 0.13f);
+    const glm::vec3 lightGray(0.86f, 0.88f, 0.94f);
+
+    drawRectangle(
+        0.0f,
+        0.0f,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        0.35f
+    );
+
+    const auto textWidth = [](const std::string& text, float scale)
+    {
+        return
+            (
+                static_cast<float>(text.size()) *
+                (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
+                PixelFont::GLYPH_SPACING
+            ) * scale;
+    };
+
+    const auto centeredX =
+        [this, &textWidth](const std::string& text, float scale)
+    {
+        return
+            (static_cast<float>(width) - textWidth(text, scale)) / 2.0f;
+    };
+
+    drawRectangle(
+        135.0f,
+        205.0f,
+        530.0f,
+        190.0f,
+        yellow,
+        0.95f
+    );
+
+    drawRectangle(
+        139.0f,
+        209.0f,
+        522.0f,
+        182.0f,
+        darkBlue,
+        0.92f
+    );
+
+    const std::string title{"READY!"};
+    constexpr float titleScale{8.0f};
+    const float titleX = centeredX(title, titleScale);
+
+    renderText(
+        title,
+        titleX + 4.0f,
+        239.0f,
+        titleScale,
+        glm::vec3(0.2f, 0.12f, 0.0f)
+    );
+
+    renderText(
+        title,
+        titleX,
+        235.0f,
+        titleScale,
+        yellow
+    );
+
+    drawRectangle(
+        190.0f,
+        315.0f,
+        420.0f,
+        2.0f,
+        blue
+    );
+
+    const std::string hint{"CHOOSE YOUR DIRECTION"};
+    constexpr float hintScale{2.5f};
+
+    renderText(
+        hint,
+        centeredX(hint, hintScale),
+        340.0f,
+        hintScale,
+        lightGray
+    );
+}
+
+void Hud::renderPause(int selected)
+{
+    const glm::vec3 yellow(1.0f, 0.85f, 0.0f);
+    const glm::vec3 blue(0.0f, 0.4f, 1.0f);
+    const glm::vec3 darkBlue(0.01f, 0.05f, 0.16f);
+    const glm::vec3 panelColor(0.008f, 0.018f, 0.055f);
+    const glm::vec3 lightGray(0.86f, 0.88f, 0.94f);
+    const glm::vec3 mutedGray(0.42f, 0.46f, 0.55f);
+
+    drawRectangle(
+        0.0f,
+        0.0f,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        0.74f
+    );
+
+    const auto textWidth = [](const std::string& text, float scale)
+    {
+        return
+            (
+                static_cast<float>(text.size()) *
+                (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
+                PixelFont::GLYPH_SPACING
+            ) * scale;
+    };
+
+    const auto centeredX =
+        [this, &textWidth](const std::string& text, float scale)
+    {
+        return
+            (static_cast<float>(width) - textWidth(text, scale)) / 2.0f;
+    };
+
+    drawRectangle(
+        110.0f,
+        55.0f,
+        580.0f,
+        490.0f,
+        blue
+    );
+
+    drawRectangle(
+        114.0f,
+        59.0f,
+        572.0f,
+        482.0f,
+        panelColor
+    );
+
+    const std::string title{"PAUSED"};
+    constexpr float titleScale{8.0f};
+    const float titleX = centeredX(title, titleScale);
+
+    renderText(
+        title,
+        titleX + 4.0f,
+        94.0f,
+        titleScale,
+        darkBlue
+    );
+
+    renderText(
+        title,
+        titleX,
+        90.0f,
+        titleScale,
+        yellow
+    );
+
+    const std::string subtitle{"GAME PAUSED"};
+    constexpr float subtitleScale{2.0f};
+
+    renderText(
+        subtitle,
+        centeredX(subtitle, subtitleScale),
+        160.0f,
+        subtitleScale,
+        lightGray
+    );
+
+    drawRectangle(
+        155.0f,
+        205.0f,
+        490.0f,
+        215.0f,
+        darkBlue
+    );
+
+    drawRectangle(
+        159.0f,
+        209.0f,
+        482.0f,
+        207.0f,
+        glm::vec3(0.012f, 0.03f, 0.09f)
+    );
+
+    const std::string options[]{
         "RESUME",
-        optionsX,
-        firstOptionY,
-        optionScale
-    );
+        "MAIN MENU"
+    };
+
+    constexpr float optionScale{4.5f};
+    constexpr float firstOptionY{240.0f};
+    constexpr float optionSpacing{82.0f};
+
+    for (int option = 0; option < 2; option++)
+    {
+        const float optionY =
+            firstOptionY + option * optionSpacing;
+
+        const bool isSelected = option == selected;
+        const std::string& optionText = options[option];
+        const float optionX = centeredX(optionText, optionScale);
+
+        if (isSelected)
+        {
+            drawRectangle(
+                182.0f,
+                optionY - 13.0f,
+                436.0f,
+                58.0f,
+                darkBlue
+            );
+
+            drawRectangle(
+                182.0f,
+                optionY - 13.0f,
+                436.0f,
+                2.0f,
+                yellow
+            );
+
+            drawRectangle(
+                182.0f,
+                optionY + 43.0f,
+                436.0f,
+                2.0f,
+                yellow
+            );
+        }
+
+        renderText(
+            optionText,
+            optionX,
+            optionY,
+            optionScale,
+            isSelected ? yellow : lightGray
+        );
+
+        if (isSelected)
+        {
+            renderText(
+                ">",
+                optionX - 42.0f,
+                optionY,
+                optionScale,
+                yellow
+            );
+
+            renderText(
+                "<",
+                optionX + textWidth(optionText, optionScale) + 15.0f,
+                optionY,
+                optionScale,
+                yellow
+            );
+        }
+    }
+
+    const std::string navigationHint{"USE ARROWS AND ENTER"};
+    const std::string resumeHint{"P TO RESUME"};
+    const std::string exitHint{"ESC TO EXIT"};
+    constexpr float informationScale{2.0f};
 
     renderText(
-        "MAIN MENU",
-        optionsX,
-        firstOptionY + optionSpacing,
-        optionScale
-    );
-
-    renderText(
-        ">",
-        optionsX - 40.0f,
-        firstOptionY + selected * optionSpacing,
-        optionScale
-    );
-
-    renderText(
-        information,
-        centeredX(information, informationScale),
-        550.0f,
+        navigationHint,
+        centeredX(navigationHint, informationScale),
+        447.0f,
         informationScale,
-        glm::vec3(0.85f, 0.85f, 0.85f)
+        lightGray
+    );
+
+    renderText(
+        resumeHint,
+        centeredX(resumeHint, informationScale),
+        477.0f,
+        informationScale,
+        blue
+    );
+
+    renderText(
+        exitHint,
+        centeredX(exitHint, informationScale),
+        510.0f,
+        informationScale,
+        mutedGray
     );
 }
 
