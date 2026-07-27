@@ -13,7 +13,7 @@
 class Shader
 {
 public:
-    unsigned int ID;
+    unsigned int ID{0};
     // constructor generates the shader on the fly
     // ------------------------------------------------------------------------
     Shader(const char* vertexPath, const char* fragmentPath)
@@ -42,9 +42,13 @@ public:
             vertexCode   = vShaderStream.str();
             fragmentCode = fShaderStream.str();
         }
-        catch (std::ifstream::failure& e)
+        catch (const std::ifstream::failure& e)
         {
-            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << e.what() << std::endl;
+            std::cerr
+                << "Failed to load shader files '" << vertexPath
+                << "' and '" << fragmentPath << "': "
+                << e.what() << '\n';
+            return;
         }
         const char* vShaderCode = vertexCode.c_str();
         const char * fShaderCode = fragmentCode.c_str();
@@ -121,4 +125,3 @@ private:
     }
 };
 #endif
-

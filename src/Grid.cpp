@@ -30,7 +30,11 @@ bool Grid::loadFromFile(const std::string& path)
         if(!line.empty() && line.back() == '\r') line.pop_back();
         lines.push_back(line);
     }
-    if (lines.empty()) return false;
+    if (lines.empty())
+    {
+        std::cerr << "Level file is empty: " << path << "\n";
+        return false;
+    }
 
     height = lines.size();
     width = lines[0].size();
@@ -58,7 +62,12 @@ bool Grid::loadFromFile(const std::string& path)
                 case 'E': t=Tile::GhostSpawnExit; ghostExitPos={x,y}; break;
                 case 'S': t=Tile::GhostSpawnEntrance; ghostEntrancePos={x,y}; break;
                 case ' ': t=Tile::Empty; break;
-                default: std::cerr<<"Unknown char "<<c<<"\n"; break;
+                default:
+                    std::cerr
+                        << "Unsupported character '" << c
+                        << "' in level file " << path
+                        << " at (" << x << ", " << y << ").\n";
+                    break;
             }
             tiles[y*maxWidth+x] = t;
         }

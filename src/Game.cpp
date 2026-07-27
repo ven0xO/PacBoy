@@ -6,11 +6,7 @@ Game::Game(const std::string& map_path, int screen_width, int screen_height)
             : hud(screen_width, screen_height),
             mapPath(map_path)
 {
-    bool success = gameGrid.loadFromFile(map_path);
-    if(!success)
-    {
-        std::cerr << "Failed to load game grid from file." << std::endl;
-    }
+    gameGrid.loadFromFile(map_path);
 
     gameState.setPelletCount(gameGrid.getInitPelletCount());
     gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());

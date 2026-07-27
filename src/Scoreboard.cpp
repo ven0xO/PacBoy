@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
 
 Scoreboard::Scoreboard(const std::string& path)
@@ -91,6 +92,7 @@ void Scoreboard::saveToFile() const
 
     if (!file.is_open())
     {
+        std::cerr << "Cannot save scoreboard file: " << filePath << "\n";
         return;
     }
 
