@@ -72,7 +72,9 @@ void Hud::render(const GameState& state)
     );
 }
 
-void Hud::drawRectangle(float x, float y, float rectangleWidth, float rectangleHeight, glm::vec3 color)
+void Hud::drawRectangle(float x, float y, float rectangleWidth, 
+                        float rectangleHeight, glm::vec3 color, 
+                        float alpha)
 {
     float vertices[] = {
         // first triangle
@@ -117,11 +119,12 @@ void Hud::drawRectangle(float x, float y, float rectangleWidth, float rectangleH
     int colorLocation = 
         glGetUniformLocation(shader.ID, "hudColor");
 
-    glUniform3f(
+    glUniform4f(
         colorLocation,
         color.x,
         color.y,
-        color.z
+        color.z,
+        alpha
     );
 
     glBindVertexArray(VAO);
@@ -261,4 +264,73 @@ void Hud::renderReady()
     }
 
     renderText(text, x, y, scale);
+}
+
+void Hud::renderPause(int selected)
+{
+    drawRectangle(
+        0.0f,
+        0.0f,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        glm::vec3(0.35f, 0.35f, 0.35f),
+        0.65f
+    );
+
+    const std::string title{"PAUSED"};
+    const std::string information{"PRESS ESC TO EXIT THE GAME"};
+    constexpr float titleScale{10.0f};
+    constexpr float optionScale{5.0f};
+    constexpr float informationScale{2.0f};
+    constexpr float optionsX{275.0f};
+    constexpr float firstOptionY{285.0f};
+    constexpr float optionSpacing{75.0f};
+
+    const auto centeredX = [this](const std::string& text, float scale)
+    {
+        const float textWidth =
+            (
+                static_cast<float>(text.size()) *
+                (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
+                PixelFont::GLYPH_SPACING
+            ) * scale;
+
+        return (static_cast<float>(width) - textWidth) / 2.0f;
+    };
+
+    renderText(
+        title,
+        centeredX(title, titleScale),
+        100.0f,
+        titleScale
+    );
+
+    renderText(
+        "RESUME",
+        optionsX,
+        firstOptionY,
+        optionScale
+    );
+
+    renderText(
+        "MAIN MENU",
+        optionsX,
+        firstOptionY + optionSpacing,
+        optionScale
+    );
+
+    renderText(
+        ">",
+        optionsX - 40.0f,
+        firstOptionY + selected * optionSpacing,
+        optionScale
+    );
+
+    renderText(
+        information,
+        centeredX(information, informationScale),
+        550.0f,
+        informationScale,
+        glm::vec3(0.85f, 0.85f, 0.85f)
+    );
 }

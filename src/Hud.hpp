@@ -15,6 +15,7 @@ public:
     void render(const GameState& state);
     void renderMainMenu(int selected);
     void renderReady();
+    void renderPause(int selected);
 
 private:
     void renderText(
@@ -29,7 +30,8 @@ private:
         float y,
         float rectangleWidth,
         float rectangleHeight,
-        glm::vec3 color
+        glm::vec3 color,
+        float alpha = 1.0f
     );
 
     unsigned int VAO;

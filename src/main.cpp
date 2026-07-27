@@ -118,6 +118,8 @@ int main()
     
     Shader ourShader("./shaders/shader.vs", "./shaders/shader.fs");
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Upload cube geometry and configure the position attribute.
     unsigned int VBO, VAO, EBO;

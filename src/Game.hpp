@@ -31,6 +31,13 @@ enum class MainMenuOption
     Count
 };
 
+enum class PauseMenuOption
+{
+    Resume,
+    MainMenu,
+    Count
+};
+
 class Game
 {
 public:
@@ -55,6 +62,10 @@ private:
         MainMenuOption::StartGame
     };
 
+    PauseMenuOption selectedPauseMenuOption{
+        PauseMenuOption::Resume
+    };
+
     std::unique_ptr<Enemy> redEnemy;
     std::unique_ptr<Enemy> pinkEnemy;
     std::unique_ptr<Enemy> cyanEnemy;
@@ -77,4 +88,5 @@ private:
     bool prevKeyLeft{false};
     bool prevKeyRight{false};
     bool prevKeyEnter{false};
+    bool prevKeyP{false};
 };

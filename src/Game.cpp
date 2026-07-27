@@ -126,6 +126,10 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
     {
         hud.renderReady();
     }
+    else if(phase == GamePhase::Paused)
+    {
+        hud.renderPause(static_cast<int>(selectedPauseMenuOption));
+    }
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -193,6 +197,21 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
     bool keyLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
     bool keyRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
     bool keyEnter = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
+    bool keyP = glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS;
+
+    if(keyP && !prevKeyP)
+    {
+        if(phase == GamePhase::Playing)
+        {
+            phase = GamePhase::Paused;
+            selectedPauseMenuOption = PauseMenuOption::Resume;
+        }
+        else if(phase == GamePhase::Paused)
+        {
+            phase = GamePhase::Playing;
+        }
+    }
+
     if(phase == GamePhase::Playing || phase == GamePhase::Ready)
     {
         if (keyUp && !prevKeyUp)
@@ -246,10 +265,41 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
             }
         }
     }
+    else if(phase == GamePhase::Paused)
+    {
+        int selected = static_cast<int>(selectedPauseMenuOption);
+        const int optionCount = static_cast<int>(PauseMenuOption::Count);
+
+        if(keyUp && !prevKeyUp)
+        {
+            selected = std::max(0, selected - 1);
+        }
+        else if(keyDown && !prevKeyDown)
+        {
+            selected = std::min(optionCount - 1, selected + 1);
+        }
+
+        selectedPauseMenuOption =
+            static_cast<PauseMenuOption>(selected);
+
+        if(keyEnter && !prevKeyEnter)
+        {
+            if(selectedPauseMenuOption == PauseMenuOption::Resume)
+            {
+                phase = GamePhase::Playing;
+            }
+            else if(selectedPauseMenuOption == PauseMenuOption::MainMenu)
+            {
+                phase = GamePhase::MainMenu;
+            }
+        }
+    }
     
 
     prevKeyUp = keyUp;
     prevKeyDown = keyDown;
     prevKeyLeft = keyLeft;
     prevKeyRight = keyRight;
+    prevKeyEnter = keyEnter;
+    prevKeyP = keyP;
 }
