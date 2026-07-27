@@ -40,3 +40,11 @@ bool GameState::checkIfNextLevel()
     level++;
     return true;
 }
+
+void GameState::resetState()
+{
+    score = 0;
+    lives = 3;
+    level = 1;
+    gameOver = false;
+}

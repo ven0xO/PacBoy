@@ -14,6 +14,7 @@ public:
     int getLives() const { return lives; }
     int getLevel() const { return level; }
     bool isGameOver() const { return gameOver; }
+    void resetState();
 
     void setPelletCount(int pCount) { pelletsCount = pCount; }
     void setEnergizerCount(int eCount) { energizerCount = eCount; }

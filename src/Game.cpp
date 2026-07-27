@@ -1,6 +1,7 @@
 #include "Game.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <iostream>
 
 Game::Game(const std::string& map_path, int screen_width, int screen_height) 
             : hud(screen_width, screen_height),
@@ -70,14 +71,16 @@ void Game::update(float currentFrame, float deltaTime)
 
     if(phase != GamePhase::Playing) return;
 
+    gameplayTimer += deltaTime;
+
     player->update(gameGrid, deltaTime);
     
     int level = gameState.getLevel();
 
-    redEnemy->update(currentFrame, level, deltaTime);
-    pinkEnemy->update(currentFrame, level, deltaTime);
-    cyanEnemy->update(currentFrame, level, deltaTime);
-    orangeEnemy->update(currentFrame, level, deltaTime);
+    redEnemy->update(gameplayTimer, level, deltaTime);
+    pinkEnemy->update(gameplayTimer, level, deltaTime);
+    cyanEnemy->update(gameplayTimer, level, deltaTime);
+    orangeEnemy->update(gameplayTimer, level, deltaTime);
 
     if(player->getEnergizer()) player->resetEnergizer();
 
@@ -171,6 +174,7 @@ void Game::nextLevel(float& lastFrame, const float currentFrame)
 
             lastFrame = 0.0f;
             timerOffset += currentFrame;
+            gameplayTimer = 0.0f;
             invulnerableUntil = 0.0f;
         }
     }
@@ -274,8 +278,10 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
         {
             if(selectedMenuOption == MainMenuOption::StartGame)
             {
-                phase = GamePhase::Ready;
-                readyTimer = currentFrame + 2.0f;
+                if (startNewGame(currentFrame))
+                {
+                    return;
+                }
             }
             else if (selectedMenuOption == MainMenuOption::Scoreboard)
             {
@@ -393,4 +399,43 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
     prevKeyEnter = keyEnter;
     prevKeyBackspace = keyBackspace;
     prevKeyP = keyP;
+}
+
+bool Game::startNewGame(float currentFrame)
+{
+    if (!gameGrid.loadFromFile(mapPath))
+    {
+        std::cerr << "Failed to start a new game.\n";
+        return false;
+    }
+
+    gameState.resetState();
+    gameState.setPelletCount(gameGrid.getInitPelletCount());
+    gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());
+
+    player->resetPlayer();
+    redEnemy->resetGhost();
+    pinkEnemy->resetGhost();
+    cyanEnemy->resetGhost();
+    orangeEnemy->resetGhost();
+
+    gameplayTimer = 0.0f;
+    readyTimer = currentFrame + 2.0f;
+    invulnerableUntil = 0.0f;
+    enteredName.clear();
+
+    selectedMenuOption = MainMenuOption::StartGame;
+    selectedPauseMenuOption = PauseMenuOption::Resume;
+
+    prevKeyUp = false;
+    prevKeyDown = false;
+    prevKeyLeft = false;
+    prevKeyRight = false;
+    prevKeyEnter = false;
+    prevKeyBackspace = false;
+    prevKeyP = false;
+    prevLetterKeys.fill(false);
+
+    phase = GamePhase::Ready;
+    return true;
 }

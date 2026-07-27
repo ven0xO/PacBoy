@@ -54,6 +54,7 @@ public:
     void render(Shader& shader, unsigned int cubeVAO);
     void nextLevel(float& lastFrame, const float currentFrame);
     void processPlayerInput(GLFWwindow* window, const float currentFrame);
+    bool startNewGame(float currentFrame);
 
 private:
     Grid gameGrid;
@@ -79,6 +80,7 @@ private:
     float invulnerableUntil{0.0f};
     float timerOffset{0.0f};
     float readyTimer{0.0f};
+    float gameplayTimer{0.0f};
     std::string mapPath;
     std::string enteredName;
     bool initialized{false};

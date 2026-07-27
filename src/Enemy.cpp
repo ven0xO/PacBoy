@@ -496,8 +496,12 @@ void Enemy::resetGhost()
     energizerChange = false;
     left_spawn = false;
     state = State::Scatter;
+    stateBeforeChange = State::Scatter;
     last_timer = -1;
     scaredUntil = 0.0f;
     color = color::get_enemy_color(type);
     direction = glm::vec2(0.0f, 0.0f);
+    target = grid->getGhostExitPosition();
+    enemyRect.x = position.x - HITBOX_SIZE / 2.0f;
+    enemyRect.y = position.y - HITBOX_SIZE / 2.0f;
 }

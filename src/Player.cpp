@@ -203,4 +203,8 @@ void Player::resetPlayer()
 
     curr_direction = glm::vec2(0.0f, 0.0f);
     target_direction = glm::vec2(0.0f, 0.0f);
+    camera_direction = glm::vec2(1.0f, 0.0f);
+    collided = false;
+    energizer = false;
+    multiplier = 0;
 }
