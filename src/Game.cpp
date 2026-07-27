@@ -57,7 +57,7 @@ Game::Game(const std::string& map_path, int screen_width, int screen_height)
     orangeEnemy->set_red_ghost(redEnemy.get());
 }
 
-void Game::update(const float currentFrame)
+void Game::update(float currentFrame, float deltaTime)
 {
     if (phase == GamePhase::Ready &&
         readyTimer > 0.0f &&
@@ -69,14 +69,14 @@ void Game::update(const float currentFrame)
 
     if(phase != GamePhase::Playing) return;
 
-    player->update(gameGrid);
+    player->update(gameGrid, deltaTime);
     
     int level = gameState.getLevel();
 
-    redEnemy->update(currentFrame, level);
-    pinkEnemy->update(currentFrame, level);
-    cyanEnemy->update(currentFrame, level);
-    orangeEnemy->update(currentFrame, level);
+    redEnemy->update(currentFrame, level, deltaTime);
+    pinkEnemy->update(currentFrame, level, deltaTime);
+    cyanEnemy->update(currentFrame, level, deltaTime);
+    orangeEnemy->update(currentFrame, level, deltaTime);
 
     if(player->getEnergizer()) player->resetEnergizer();
 

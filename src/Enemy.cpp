@@ -127,7 +127,7 @@ glm::vec2 Enemy::find_target()
     return target;
 }
 
-void Enemy::update(float timer, int level)
+void Enemy::update(float timer, int level, float deltaTime)
 {
     int currentSecond = static_cast<int>(timer);
 
@@ -205,7 +205,7 @@ void Enemy::update(float timer, int level)
     
     if (!is_at_center(position))
     {
-        move();
+        move(deltaTime);
         return;
     }
     position = glm::round(position);
@@ -370,15 +370,61 @@ void Enemy::update(float timer, int level)
         
     }
 
-    move();
+    move(deltaTime);
 }
 
-void Enemy::move()
+void Enemy::move(float deltaTime)
 {
-    position = position + direction*SPEED;
+    constexpr float EPSILON = 0.0001f;
+
+    float movement = SPEED * deltaTime;
+    glm::vec2 nextPosition = position + direction * movement;
+
+    if (direction.x > 0.0f)
+    {
+        float nextCenter = std::floor(position.x + EPSILON) + 1.0f;
+
+        if (nextPosition.x >= nextCenter)
+        {
+            nextPosition.x = nextCenter;
+            nextPosition.y = std::round(position.y);
+        }
+    }
+    else if (direction.x < 0.0f)
+    {
+        float nextCenter = std::ceil(position.x - EPSILON) - 1.0f;
+
+        if (nextPosition.x <= nextCenter)
+        {
+            nextPosition.x = nextCenter;
+            nextPosition.y = std::round(position.y);
+        }
+    }
+    else if (direction.y > 0.0f)
+    {
+        float nextCenter = std::floor(position.y + EPSILON) + 1.0f;
+
+        if (nextPosition.y >= nextCenter)
+        {
+            nextPosition.y = nextCenter;
+            nextPosition.x = std::round(position.x);
+        }
+    }
+    else if (direction.y < 0.0f)
+    {
+        float nextCenter = std::ceil(position.y - EPSILON) - 1.0f;
+
+        if (nextPosition.y <= nextCenter)
+        {
+            nextPosition.y = nextCenter;
+            nextPosition.x = std::round(position.x);
+        }
+    }
+
+    position = nextPosition;
+
     enemyRect.x = position.x - HITBOX_SIZE / 2.0f;
     enemyRect.y = position.y - HITBOX_SIZE / 2.0f;
-    
 }
 
 void Enemy::render(Shader& shader, unsigned int cubeVAO)

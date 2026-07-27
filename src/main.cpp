@@ -1,7 +1,6 @@
 #include "../external/GLAD/include/glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include <fstream>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -10,6 +9,7 @@
 #include "../external/shader_s.h"
 #include "../external/camera.h"
 #include "Game.hpp"
+#include <cmath>
 
 // GLFW callbacks and input handling.
 void processInput(GLFWwindow* window);
@@ -29,25 +29,10 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-void checkFileExists(const std::string& path) {
-    std::ifstream file(path);
-    if (!file) {
-        std::cout << "File not found: " << path << std::endl;
-    } else {
-        std::cout << "File exists: " << path << std::endl;
-    }
-}
-
 const glm::vec3 CAMERA_OFFSET = glm::vec3(0.0f, 5.0f, 10.0f);
-
 
 int main()
 {
-
-    checkFileExists("./shaders/shader.vs");
-    checkFileExists("./shaders/shader.fs");
-
-    
     // Shared cube mesh used for tiles and characters.
     float vertices[] = {
         // Front face
@@ -158,7 +143,14 @@ int main()
             cameraOffset.y = 5.0f;
         }
         glm::vec3 targetCameraPos = playerPos + cameraOffset;
-        camera.Position = glm::mix(camera.Position, targetCameraPos, 0.05f);
+        constexpr float CAMERA_FOLLOW_SPEED = 3.0f;
+        float followFactor = 1.0f - std::exp(-CAMERA_FOLLOW_SPEED * deltaTime);
+
+        camera.Position = glm::mix(
+            camera.Position,
+            targetCameraPos,
+            followFactor
+        );
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -172,7 +164,7 @@ int main()
         int viewLoc = glGetUniformLocation(ourShader.ID, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-        game.update(currentFrame);
+        game.update(currentFrame, deltaTime);
         game.render(ourShader, VAO);
 
         glfwSwapBuffers(window);

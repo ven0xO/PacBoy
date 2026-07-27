@@ -45,9 +45,9 @@ public:
     }
     void set_position(glm::vec2 pos) { position = pos; }
     void assign_scatter();
-    void update(float timer, int level);
+    void update(float timer, int level, float deltaTime);
+    void move(float deltaTime);
     void calc_direction(glm::vec2 curr, glm::vec2 dest);
-    void move();
     void render(Shader& shader, unsigned int cubeVAO);
     void renderTargetBeam(Shader& shader, unsigned int cubeVAO);
     bool checkCollision(const Rect& playerRect);
@@ -80,7 +80,7 @@ private:
     Grid* grid;
     Player* player;
 
-    const float SPEED = 0.05;
+    static constexpr float SPEED = 3.0f;
     static constexpr float HITBOX_SIZE = 0.8f;
     bool left_spawn = false;
 };

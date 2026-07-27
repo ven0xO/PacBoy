@@ -27,7 +27,7 @@ public:
     void moveRight();
 
     bool canMoveTo(glm::vec2 targetPos, Grid& grid);
-    bool update(Grid& grid);
+    bool update(Grid& grid, float deltaTime);
     bool collectPellet(int x, int y, Grid& grid);
 
     // Player state accessors.
@@ -72,6 +72,6 @@ private:
     int multiplier = 0;
     const float MOVEMENT_THRESHOLD_VIS = 0.1;
     const float MOVEMENT_THRESHOLD_POS = 0.05;
-    const float SPEED = 0.05;
+    static constexpr float SPEED = 3.0f;
     static constexpr float HITBOX_SIZE = 0.8f;
 };

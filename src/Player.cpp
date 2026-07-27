@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <cmath>
 
 
 Player::Player(float x, float y, GameState *state) :  position(x, y), 
@@ -88,7 +89,7 @@ void Player::setDirection(Direction direct, bool updateCamera)
     }
 }
 
-bool Player::update(Grid& grid)
+bool Player::update(Grid& grid, float deltaTime)
 {
     // Handles smooth movement while applying turns, wall checks, and pellet pickup at tile centers.
     float fracX = visual_position.x - glm::floor(visual_position.x);
@@ -96,14 +97,20 @@ bool Player::update(Grid& grid)
     
     if(curr_direction != glm::vec2(0.0f, 0.0f) && glm::length(curr_direction - camera_direction) > 0.01f)
     {
-        camera_direction = glm::mix(camera_direction, curr_direction, 0.08f);
+        constexpr float CAMERA_TURN_SPEED = 5.0f;
+        float turnFactor = 1.0f - std::exp(-CAMERA_TURN_SPEED * deltaTime);
+
+        camera_direction = glm::mix(
+            camera_direction,
+            curr_direction,
+            turnFactor
+        );
     }
 
     if((fracX < 0.07f || fracX > 0.93f) && (fracY < 0.07f || fracY > 0.93f))
     {
         // Turn and collision decisions are only stable near tile centers.
         collectPellet(round(visual_position.x), round(visual_position.y), grid);
-        std::cout <<"CHECKING"<<std::endl;
         Tile new_pos_tile = grid.getTile(
             glm::round(visual_position.x + curr_direction.x), 
             glm::round(visual_position.y + curr_direction.y));
@@ -136,11 +143,9 @@ bool Player::update(Grid& grid)
         }
     }
 
-    visual_position += curr_direction * SPEED;
+    visual_position += curr_direction * SPEED * deltaTime;
 
-    std::cout << "visual: (" << visual_position.x << ", " << visual_position.y << ") real: (" << position.x << ", " << position.y << ")" << std::endl;
-    std::cout << "curr: (" << curr_direction.x << ", " << curr_direction.y << ") target: (" << target_direction.x << ", " << target_direction.y << ")" << std::endl;
-    return true;
+   return true;
 }
 
 void Player::setPosition(float x, float y)

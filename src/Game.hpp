@@ -49,7 +49,7 @@ public:
     Player* getPlayerPtr() const { return player.get(); }
     Grid* getGridPtr() { return &gameGrid; }
 
-    void update(const float currentFrame);
+    void update(float currentFrame, float deltaTime);
     void render(Shader& shader, unsigned int cubeVAO);
     void nextLevel(float& lastFrame, const float currentFrame);
     void processPlayerInput(GLFWwindow* window, const float currentFrame);
