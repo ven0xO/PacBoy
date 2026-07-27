@@ -12,6 +12,7 @@ class Hud
 {
 public:
     Hud(int widthi, int heighti);
+    bool isValid() const { return shader.isValid(); }
 
     void render(const GameState& state);
     void renderMainMenu(int selected);
@@ -42,8 +43,8 @@ private:
         float alpha = 1.0f
     );
 
-    unsigned int VAO;
-    unsigned int VBO;
+    unsigned int VAO{0};
+    unsigned int VBO{0};
     Shader shader;
     int width;
     int height;

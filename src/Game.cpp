@@ -6,7 +6,10 @@ Game::Game(const std::string& map_path, int screen_width, int screen_height)
             : hud(screen_width, screen_height),
             mapPath(map_path)
 {
-    gameGrid.loadFromFile(map_path);
+    if (!hud.isValid() || !gameGrid.loadFromFile(map_path))
+    {
+        return;
+    }
 
     gameState.setPelletCount(gameGrid.getInitPelletCount());
     gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());
@@ -51,6 +54,8 @@ Game::Game(const std::string& map_path, int screen_width, int screen_height)
     pinkEnemy->set_red_ghost(redEnemy.get());
     cyanEnemy->set_red_ghost(redEnemy.get());
     orangeEnemy->set_red_ghost(redEnemy.get());
+
+    initialized = true;
 }
 
 void Game::update(float currentFrame, float deltaTime)

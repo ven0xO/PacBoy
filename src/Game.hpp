@@ -48,6 +48,7 @@ public:
     float getTimerOffset() const { return timerOffset; }
     Player* getPlayerPtr() const { return player.get(); }
     Grid* getGridPtr() { return &gameGrid; }
+    bool isInitialized() const { return initialized; }
 
     void update(float currentFrame, float deltaTime);
     void render(Shader& shader, unsigned int cubeVAO);
@@ -80,6 +81,7 @@ private:
     float readyTimer{0.0f};
     std::string mapPath;
     std::string enteredName;
+    bool initialized{false};
 
     const bool DEV{true};
 

@@ -13,6 +13,11 @@ shader("./shaders/hud.vs", "./shaders/hud.fs"),
 width(widthi),
 height(heighti)
 {
+    if (!shader.isValid())
+    {
+        return;
+    }
+
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
