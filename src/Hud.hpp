@@ -19,6 +19,11 @@ public:
     void renderPause(int selected);
     void renderScoreboard(const Scoreboard& scoreboard);
     void renderGameOver(const GameState& state);
+    void renderHighScore(
+        const std::string& playerName,
+        int score,
+        bool isNewHighestScore
+    );
 
 private:
     void renderText(

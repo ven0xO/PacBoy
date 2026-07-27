@@ -1,5 +1,6 @@
 #include "Scoreboard.hpp"
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
@@ -7,6 +8,19 @@ Scoreboard::Scoreboard(const std::string& path)
     : filePath(path)
 {
     loadFromFile();
+    std::sort(
+        entries.begin(),
+        entries.end(),
+        [](const ScoreEntry& first, const ScoreEntry& second)
+        {
+            return first.score > second.score;
+        }
+    );
+
+    if (entries.size() > 10)
+    {
+        entries.resize(10);
+    }
 }
 
 void Scoreboard::addScore(const std::string& name, int score)
@@ -21,6 +35,13 @@ void Scoreboard::addScore(const std::string& name, int score)
             return first.score > second.score;
         }
     );
+
+    if (entries.size() > 10)
+    {
+        entries.resize(10);
+    }
+
+    saveToFile();
 }
 
 bool Scoreboard::isHighScore(int score) const
@@ -34,6 +55,10 @@ void Scoreboard::loadFromFile()
 
     if(!file.is_open())
     {
+        std::filesystem::create_directories(
+            std::filesystem::path(filePath).parent_path()
+        );
+        saveToFile();
         return;
     }
 

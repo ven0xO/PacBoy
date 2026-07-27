@@ -751,3 +751,329 @@ void Hud::renderGameOver(const GameState& state)
         yellow
     );
 }
+
+void Hud::renderHighScore(
+    const std::string& playerName,
+    int score,
+    bool isNewHighestScore
+)
+{
+    const glm::vec3 gold(1.0f, 0.82f, 0.0f);
+    const glm::vec3 orange(1.0f, 0.42f, 0.05f);
+    const glm::vec3 blue(0.0f, 0.45f, 1.0f);
+    const glm::vec3 darkGold(0.28f, 0.17f, 0.0f);
+    const glm::vec3 darkBlue(0.01f, 0.08f, 0.24f);
+    const glm::vec3 panelColor(0.008f, 0.018f, 0.055f);
+    const glm::vec3 lightGray(0.88f, 0.9f, 0.95f);
+    const glm::vec3 mutedGray(0.42f, 0.46f, 0.55f);
+
+    const glm::vec3 accent = isNewHighestScore ? gold : blue;
+    const glm::vec3 darkAccent =
+        isNewHighestScore ? darkGold : darkBlue;
+
+    drawRectangle(
+        0.0f,
+        0.0f,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        glm::vec3(0.0f, 0.0f, 0.0f)
+    );
+
+    const auto textWidth = [](const std::string& text, float scale)
+    {
+        return
+            (
+                static_cast<float>(text.size()) *
+                (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
+                PixelFont::GLYPH_SPACING
+            ) * scale;
+    };
+
+    const auto centeredX =
+        [this, &textWidth](const std::string& text, float scale)
+    {
+        return
+            (static_cast<float>(width) - textWidth(text, scale)) / 2.0f;
+    };
+
+    drawRectangle(
+        55.0f,
+        25.0f,
+        690.0f,
+        550.0f,
+        accent
+    );
+
+    drawRectangle(
+        59.0f,
+        29.0f,
+        682.0f,
+        542.0f,
+        panelColor
+    );
+
+    drawRectangle(
+        82.0f,
+        48.0f,
+        105.0f,
+        3.0f,
+        accent
+    );
+
+    drawRectangle(
+        613.0f,
+        48.0f,
+        105.0f,
+        3.0f,
+        accent
+    );
+
+    const std::string title =
+        isNewHighestScore ? "NEW HIGH SCORE" : "TOP 10 SCORE";
+
+    constexpr float titleScale{6.0f};
+    const float titleX = centeredX(title, titleScale);
+
+    renderText(
+        title,
+        titleX + 3.0f,
+        58.0f,
+        titleScale,
+        darkAccent
+    );
+
+    renderText(
+        title,
+        titleX,
+        55.0f,
+        titleScale,
+        accent
+    );
+
+    const std::string subtitle =
+        isNewHighestScore
+            ? "YOU SET A NEW RECORD"
+            : "YOU MADE THE TOP 10";
+
+    constexpr float subtitleScale{2.5f};
+
+    renderText(
+        subtitle,
+        centeredX(subtitle, subtitleScale),
+        112.0f,
+        subtitleScale,
+        isNewHighestScore ? orange : lightGray
+    );
+
+    drawRectangle(
+        270.0f,
+        145.0f,
+        260.0f,
+        100.0f,
+        darkAccent
+    );
+
+    drawRectangle(
+        273.0f,
+        148.0f,
+        254.0f,
+        94.0f,
+        glm::vec3(0.015f, 0.03f, 0.085f)
+    );
+
+    const std::string scoreLabel{"SCORE"};
+    constexpr float scoreLabelScale{2.5f};
+
+    renderText(
+        scoreLabel,
+        centeredX(scoreLabel, scoreLabelScale),
+        158.0f,
+        scoreLabelScale,
+        lightGray
+    );
+
+    const std::string scoreText = std::to_string(score);
+    constexpr float scoreScale{5.5f};
+
+    renderText(
+        scoreText,
+        centeredX(scoreText, scoreScale),
+        190.0f,
+        scoreScale,
+        gold
+    );
+
+    drawRectangle(
+        125.0f,
+        260.0f,
+        550.0f,
+        2.0f,
+        darkAccent
+    );
+
+    const std::string namePrompt{"ENTER YOUR NAME"};
+    constexpr float namePromptScale{3.0f};
+
+    renderText(
+        namePrompt,
+        centeredX(namePrompt, namePromptScale),
+        276.0f,
+        namePromptScale,
+        lightGray
+    );
+
+    constexpr float inputX{155.0f};
+    constexpr float inputY{307.0f};
+    constexpr float inputWidth{490.0f};
+    constexpr float inputHeight{130.0f};
+
+    drawRectangle(
+        inputX,
+        inputY,
+        inputWidth,
+        inputHeight,
+        accent
+    );
+
+    drawRectangle(
+        inputX + 3.0f,
+        inputY + 3.0f,
+        inputWidth - 6.0f,
+        inputHeight - 6.0f,
+        glm::vec3(0.01f, 0.025f, 0.075f)
+    );
+
+    constexpr std::size_t maxNameLength{10};
+    constexpr float nameScale{5.0f};
+    constexpr float slotStep{
+        (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) * nameScale
+    };
+    constexpr float slotWidth{PixelFont::GLYPH_WIDTH * nameScale};
+    constexpr float slotsWidth{
+        (maxNameLength - 1) * slotStep + slotWidth
+    };
+
+    const float slotsX =
+        (static_cast<float>(width) - slotsWidth) / 2.0f;
+
+    const std::string visibleName =
+        playerName.substr(0, maxNameLength);
+
+    for (std::size_t i = 0; i < maxNameLength; i++)
+    {
+        const float slotX =
+            slotsX + static_cast<float>(i) * slotStep;
+
+        drawRectangle(
+            slotX,
+            392.0f,
+            slotWidth,
+            2.0f,
+            mutedGray
+        );
+
+        if (i < visibleName.size())
+        {
+            renderText(
+                std::string(1, visibleName[i]),
+                slotX,
+                342.0f,
+                nameScale,
+                lightGray
+            );
+        }
+    }
+
+    if (visibleName.size() < maxNameLength)
+    {
+        const float activeSlotX =
+            slotsX +
+            static_cast<float>(visibleName.size()) * slotStep;
+
+        drawRectangle(
+            activeSlotX,
+            389.0f,
+            slotWidth,
+            5.0f,
+            accent
+        );
+    }
+
+    const std::string characterHint{"USE LETTERS A-Z"};
+    constexpr float hintScale{2.0f};
+
+    renderText(
+        characterHint,
+        centeredX(characterHint, hintScale),
+        455.0f,
+        hintScale,
+        mutedGray
+    );
+
+    constexpr float saveButtonX{205.0f};
+    constexpr float saveButtonY{484.0f};
+    constexpr float saveButtonWidth{390.0f};
+    constexpr float saveButtonHeight{48.0f};
+    constexpr float borderThickness{2.0f};
+
+    drawRectangle(
+        saveButtonX,
+        saveButtonY,
+        saveButtonWidth,
+        saveButtonHeight,
+        darkAccent
+    );
+
+    drawRectangle(
+        saveButtonX,
+        saveButtonY,
+        saveButtonWidth,
+        borderThickness,
+        accent
+    );
+
+    drawRectangle(
+        saveButtonX,
+        saveButtonY + saveButtonHeight - borderThickness,
+        saveButtonWidth,
+        borderThickness,
+        accent
+    );
+
+    drawRectangle(
+        saveButtonX,
+        saveButtonY,
+        borderThickness,
+        saveButtonHeight,
+        accent
+    );
+
+    drawRectangle(
+        saveButtonX + saveButtonWidth - borderThickness,
+        saveButtonY,
+        borderThickness,
+        saveButtonHeight,
+        accent
+    );
+
+    const std::string savePrompt{"> PRESS ENTER TO SAVE <"};
+    constexpr float savePromptScale{2.5f};
+
+    renderText(
+        savePrompt,
+        centeredX(savePrompt, savePromptScale),
+        499.0f,
+        savePromptScale,
+        gold
+    );
+
+    const std::string deleteHint{"BACKSPACE TO DELETE"};
+
+    renderText(
+        deleteHint,
+        centeredX(deleteHint, hintScale),
+        548.0f,
+        hintScale,
+        mutedGray
+    );
+}

@@ -8,6 +8,7 @@
 #include "Rect.hpp"
 #include "Scoreboard.hpp"
 
+#include <array>
 #include <memory>
 #include <string>
 #include <glm/glm.hpp>
@@ -78,6 +79,7 @@ private:
     float timerOffset{0.0f};
     float readyTimer{0.0f};
     std::string mapPath;
+    std::string enteredName;
 
     const bool DEV{true};
 
@@ -91,5 +93,7 @@ private:
     bool prevKeyLeft{false};
     bool prevKeyRight{false};
     bool prevKeyEnter{false};
+    bool prevKeyBackspace{false};
     bool prevKeyP{false};
+    std::array<bool, 26> prevLetterKeys{};
 };

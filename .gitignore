@@ -4,3 +4,4 @@ build
 PacBoy.exe
 .gitignore
 TODO.txt
+/assets/scores/scores.json

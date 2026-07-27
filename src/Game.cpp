@@ -142,6 +142,11 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
     {
         hud.renderGameOver(gameState);
     }
+    else if(phase == GamePhase::NewScore)
+    {
+        int score = gameState.getScore();
+        hud.renderHighScore(enteredName, score, scoreboard.getHighScore() < score);
+    }
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -213,6 +218,8 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
     bool keyLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
     bool keyRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
     bool keyEnter = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
+    bool keyBackspace =
+        glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS;
     bool keyP = glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS;
 
     if(keyP && !prevKeyP)
@@ -323,12 +330,63 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
         {
             if (scoreboard.isHighScore(gameState.getScore()))
             {
+                enteredName.clear();
+                prevLetterKeys.fill(false);
                 phase = GamePhase::NewScore;
             }
             else
             {
                 phase = GamePhase::MainMenu;
             }
+        }
+    }
+    else if(phase == GamePhase::NewScore)
+    {
+        constexpr std::size_t maxNameLength{10};
+
+        for (int key = GLFW_KEY_A; key <= GLFW_KEY_Z; key++)
+        {
+            const std::size_t index =
+                static_cast<std::size_t>(key - GLFW_KEY_A);
+
+            const bool keyPressed =
+                glfwGetKey(window, key) == GLFW_PRESS;
+
+            if (
+                keyPressed &&
+                !prevLetterKeys[index] &&
+                enteredName.size() < maxNameLength
+            )
+            {
+                enteredName.push_back(
+                    static_cast<char>('A' + index)
+                );
+            }
+
+            prevLetterKeys[index] = keyPressed;
+        }
+
+        if (
+            keyBackspace &&
+            !prevKeyBackspace &&
+            !enteredName.empty()
+        )
+        {
+            enteredName.pop_back();
+        }
+
+        if (
+            keyEnter &&
+            !prevKeyEnter &&
+            !enteredName.empty()
+        )
+        {
+            scoreboard.addScore(
+                enteredName,
+                gameState.getScore()
+            );
+
+            phase = GamePhase::Scoreboard;
         }
     }
     
@@ -338,5 +396,6 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
     prevKeyLeft = keyLeft;
     prevKeyRight = keyRight;
     prevKeyEnter = keyEnter;
+    prevKeyBackspace = keyBackspace;
     prevKeyP = keyP;
 }
