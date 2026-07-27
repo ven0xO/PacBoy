@@ -22,7 +22,8 @@ enum class GamePhase
     Playing,
     Paused,
     LevelComplete,
-    GameOver
+    GameOver,
+    NewScore
 };
 
 enum class MainMenuOption

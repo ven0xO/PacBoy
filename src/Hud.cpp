@@ -564,3 +564,190 @@ void Hud::renderScoreboard(const Scoreboard& scoreboard)
         yellow
     );
 }
+
+void Hud::renderGameOver(const GameState& state)
+{
+    const glm::vec3 red(1.0f, 0.08f, 0.12f);
+    const glm::vec3 darkRed(0.28f, 0.01f, 0.025f);
+    const glm::vec3 panelColor(0.055f, 0.008f, 0.015f);
+    const glm::vec3 yellow(1.0f, 0.85f, 0.0f);
+    const glm::vec3 lightGray(0.82f, 0.82f, 0.82f);
+
+    drawRectangle(
+        0.0f,
+        0.0f,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        0.88f
+    );
+
+    const auto textWidth = [](const std::string& text, float scale)
+    {
+        return
+            (
+                static_cast<float>(text.size()) *
+                (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
+                PixelFont::GLYPH_SPACING
+            ) * scale;
+    };
+
+    const auto centeredX =
+        [this, &textWidth](const std::string& text, float scale)
+    {
+        return
+            (static_cast<float>(width) - textWidth(text, scale)) / 2.0f;
+    };
+
+    drawRectangle(
+        90.0f,
+        65.0f,
+        620.0f,
+        470.0f,
+        red
+    );
+
+    drawRectangle(
+        94.0f,
+        69.0f,
+        612.0f,
+        462.0f,
+        panelColor
+    );
+
+    const std::string title{"GAME OVER"};
+    constexpr float titleScale{8.0f};
+    const float titleX = centeredX(title, titleScale);
+
+    renderText(
+        title,
+        titleX + 4.0f,
+        109.0f,
+        titleScale,
+        darkRed
+    );
+
+    renderText(
+        title,
+        titleX,
+        105.0f,
+        titleScale,
+        red
+    );
+
+    drawRectangle(
+        135.0f,
+        188.0f,
+        530.0f,
+        3.0f,
+        darkRed
+    );
+
+    const std::string scoreLabel{"FINAL SCORE"};
+    constexpr float labelScale{3.0f};
+
+    renderText(
+        scoreLabel,
+        centeredX(scoreLabel, labelScale),
+        218.0f,
+        labelScale,
+        lightGray
+    );
+
+    const std::string score = std::to_string(state.getScore());
+    constexpr float scoreScale{6.0f};
+
+    renderText(
+        score,
+        centeredX(score, scoreScale),
+        258.0f,
+        scoreScale,
+        yellow
+    );
+
+    drawRectangle(
+        230.0f,
+        325.0f,
+        340.0f,
+        2.0f,
+        darkRed
+    );
+
+    const std::string levelLabel{"LEVEL REACHED"};
+
+    renderText(
+        levelLabel,
+        centeredX(levelLabel, labelScale),
+        352.0f,
+        labelScale,
+        lightGray
+    );
+
+    const std::string level = std::to_string(state.getLevel());
+    constexpr float levelScale{5.0f};
+
+    renderText(
+        level,
+        centeredX(level, levelScale),
+        390.0f,
+        levelScale,
+        red
+    );
+
+    constexpr float promptX{190.0f};
+    constexpr float promptY{463.0f};
+    constexpr float promptWidth{420.0f};
+    constexpr float promptHeight{48.0f};
+    constexpr float borderThickness{2.0f};
+
+    drawRectangle(
+        promptX,
+        promptY,
+        promptWidth,
+        promptHeight,
+        darkRed
+    );
+
+    drawRectangle(
+        promptX,
+        promptY,
+        promptWidth,
+        borderThickness,
+        red
+    );
+
+    drawRectangle(
+        promptX,
+        promptY + promptHeight - borderThickness,
+        promptWidth,
+        borderThickness,
+        red
+    );
+
+    drawRectangle(
+        promptX,
+        promptY,
+        borderThickness,
+        promptHeight,
+        red
+    );
+
+    drawRectangle(
+        promptX + promptWidth - borderThickness,
+        promptY,
+        borderThickness,
+        promptHeight,
+        red
+    );
+
+    const std::string prompt{"PRESS ENTER TO CONTINUE"};
+    constexpr float promptScale{2.5f};
+
+    renderText(
+        prompt,
+        centeredX(prompt, promptScale),
+        478.0f,
+        promptScale,
+        yellow
+    );
+}

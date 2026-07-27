@@ -138,6 +138,10 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
     {
         hud.renderPause(static_cast<int>(selectedPauseMenuOption));
     }
+    else if(phase == GamePhase::GameOver)
+    {
+        hud.renderGameOver(gameState);
+    }
     glEnable(GL_DEPTH_TEST);
 }
 
@@ -183,6 +187,10 @@ void Game::checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float c
         if(!gameState.isGameOver())
         {
             playerPtr->setPosition(gameGrid.getPacmanStartPosition());
+        }
+        else
+        {
+            phase = GamePhase::GameOver;
         }
     }
 }
@@ -307,6 +315,20 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
         if(keyEnter && !prevKeyEnter)
         {
             phase = GamePhase::MainMenu;
+        }
+    }
+    else if(phase == GamePhase::GameOver)
+    {
+        if (keyEnter && !prevKeyEnter)
+        {
+            if (scoreboard.isHighScore(gameState.getScore()))
+            {
+                phase = GamePhase::NewScore;
+            }
+            else
+            {
+                phase = GamePhase::MainMenu;
+            }
         }
     }
     

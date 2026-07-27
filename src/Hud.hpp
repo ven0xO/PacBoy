@@ -18,6 +18,7 @@ public:
     void renderReady();
     void renderPause(int selected);
     void renderScoreboard(const Scoreboard& scoreboard);
+    void renderGameOver(const GameState& state);
 
 private:
     void renderText(
