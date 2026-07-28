@@ -55,6 +55,7 @@ public:
     void nextLevel(float& lastFrame, const float currentFrame);
     void processPlayerInput(GLFWwindow* window, const float currentFrame);
     bool startNewGame(float currentFrame);
+    bool resetRound(float currentFrame);
 
 private:
     Grid gameGrid;

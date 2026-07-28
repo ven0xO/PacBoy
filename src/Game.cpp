@@ -192,17 +192,10 @@ void Game::checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float c
     else if(currentState != State::Dead && currentFrame >= invulnerableUntil)
     {
         gameState.loseLife();
-        invulnerableUntil = currentFrame + 1.5f;
 
         if(!gameState.isGameOver())
         {
-            playerPtr->setPosition(gameGrid.getPacmanStartPosition());
-            redEnemy->resetGhost();
-            pinkEnemy->resetGhost();
-            cyanEnemy->resetGhost();
-            orangeEnemy->resetGhost();
-            phase = GamePhase::Ready;
-            readyTimer = currentFrame + 2.0f;
+            resetRound(currentFrame);
         }
         else
         {
@@ -423,6 +416,34 @@ bool Game::startNewGame(float currentFrame)
     readyTimer = currentFrame + 2.0f;
     invulnerableUntil = 0.0f;
     enteredName.clear();
+
+    selectedMenuOption = MainMenuOption::StartGame;
+    selectedPauseMenuOption = PauseMenuOption::Resume;
+
+    prevKeyUp = false;
+    prevKeyDown = false;
+    prevKeyLeft = false;
+    prevKeyRight = false;
+    prevKeyEnter = false;
+    prevKeyBackspace = false;
+    prevKeyP = false;
+    prevLetterKeys.fill(false);
+
+    phase = GamePhase::Ready;
+    return true;
+}
+
+bool Game::resetRound(float currentFrame)
+{
+    player->resetPlayer();
+    redEnemy->resetGhost();
+    pinkEnemy->resetGhost();
+    cyanEnemy->resetGhost();
+    orangeEnemy->resetGhost();
+
+    gameplayTimer = 0.0f;
+    readyTimer = currentFrame + 2.0f;
+    invulnerableUntil = currentFrame + 1.5f;
 
     selectedMenuOption = MainMenuOption::StartGame;
     selectedPauseMenuOption = PauseMenuOption::Resume;
