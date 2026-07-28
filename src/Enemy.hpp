@@ -66,6 +66,7 @@ private:
     glm::vec2 direction;
     glm::vec2 spawn_point;
     glm::vec2 spawn_entrance;
+    glm::vec2 spawn_exit;
     glm::vec3 color;
     Rect enemyRect;
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <array>
 #include<glm/glm.hpp>
 
 // Forward declaration
@@ -30,11 +31,38 @@ public:
     int getInitEnergizerCount() const { return initEnergizerCount; }
     int getInitPelletCount() const { return initPelletCount; }
     glm::vec2 getPacmanStartPosition() const;
-    glm::vec2 getGhostSpawnPosition() const;
-    glm::vec2 getGhostEntryPosition() const {return ghostEntrancePos;}
-    glm::vec2 getGhostExitPosition() const {return ghostExitPos;}
     std::vector<glm::vec2> possible_moves(glm::vec2 position);
     glm::vec2 wrapPosition(glm::vec2 position) const;
+
+    glm::vec2 getRedGhostSpawnPosition() const
+    {
+        return ghostStartPositions[0];
+    }
+
+    glm::vec2 getPinkGhostSpawnPosition() const
+    {
+        return ghostStartPositions[1];
+    }
+
+    glm::vec2 getBlueGhostSpawnPosition() const
+    {
+        return ghostStartPositions[2];
+    }
+
+    glm::vec2 getOrangeGhostSpawnPosition() const
+    {
+        return ghostStartPositions[3];
+    }
+
+    const std::vector<glm::vec2>& getGhostEntryPositions() const
+    {
+        return ghostEntrancePositions;
+    }
+
+    const std::vector<glm::vec2>& getGhostExitPositions() const
+    {
+        return ghostExitPositions;
+    }
 private:
     std::vector<Tile> tiles;
     int width;
@@ -42,8 +70,8 @@ private:
     int initPelletCount{0};
     int initEnergizerCount{0};
     glm::vec2 pacmanStartPos;
-    glm::vec2 ghostStartPos;
-    glm::vec2 ghostEntrancePos;
-    glm::vec2 ghostExitPos;
+    std::array<glm::vec2, 4> ghostStartPositions{};
+    std::vector<glm::vec2> ghostEntrancePositions;
+    std::vector<glm::vec2> ghostExitPositions;
     std::vector<std::string> lines;
 };

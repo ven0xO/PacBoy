@@ -22,33 +22,32 @@ Game::Game(const std::string& map_path, int screen_width, int screen_height)
         &gameState
     );
 
-    glm::vec2 ghostSpawn = gameGrid.getGhostSpawnPosition();
     redEnemy = std::make_unique<Enemy>(
         Type::Red,
         &gameGrid,
         player.get(),
-        ghostSpawn,
+        gameGrid.getRedGhostSpawnPosition(),
         &gameState
     );
     pinkEnemy = std::make_unique<Enemy>(
         Type::Pink,
         &gameGrid,
         player.get(),
-        ghostSpawn,
+        gameGrid.getPinkGhostSpawnPosition(),
         &gameState
     );
     cyanEnemy = std::make_unique<Enemy>(
         Type::Blue,
         &gameGrid,
         player.get(),
-        ghostSpawn,
+        gameGrid.getBlueGhostSpawnPosition(),
         &gameState
     );
     orangeEnemy = std::make_unique<Enemy>(
         Type::Orange,
         &gameGrid,
         player.get(),
-        ghostSpawn,
+        gameGrid.getOrangeGhostSpawnPosition(),
         &gameState
     );
 

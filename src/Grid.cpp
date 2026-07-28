@@ -20,6 +20,8 @@ bool Grid::loadFromFile(const std::string& path)
 
     lines.clear();
     tiles.clear();
+    ghostEntrancePositions.clear();
+    ghostExitPositions.clear();
 
     initPelletCount = 0;
     initEnergizerCount = 0;
@@ -54,14 +56,44 @@ bool Grid::loadFromFile(const std::string& path)
         for (int x=0; x<rowWidth; ++x) {
             char c = lines[y][x];
             Tile t = Tile::Empty;
+
+            // Level map characters:
+            // # - wall
+            // . - pellet
+            // * - energizer
+            // P - player spawn
+            // r - red ghost spawn
+            // p - pink ghost spawn
+            // b - blue ghost spawn
+            // o - orange ghost spawn
+            // E - ghost-house exit
+            // S - ghost-house entrance/gate
+            // T - tunnel endpoint
+            //   - empty tile
             switch(c) {
                 case '#': t=Tile::Wall; break;
                 case '.': t=Tile::Pellet; initPelletCount++; break;
                 case '*': t=Tile::Energizer; initEnergizerCount++; break;
                 case 'P': t=Tile::PacmanStart; pacmanStartPos={x,y}; break;
-                case 'G': t=Tile::GhostStart; ghostStartPos={x,y}; break;
-                case 'E': t=Tile::GhostSpawnExit; ghostExitPos={x,y}; break;
-                case 'S': t=Tile::GhostSpawnEntrance; ghostEntrancePos={x,y}; break;
+                case 'r': t = Tile::GhostStart; ghostStartPositions[0] = {x, y}; break;
+                case 'p': t = Tile::GhostStart; ghostStartPositions[1] = {x, y}; break;
+                case 'b': t = Tile::GhostStart; ghostStartPositions[2] = {x, y}; break;
+                case 'o': t = Tile::GhostStart; ghostStartPositions[3] = {x, y}; break;
+                case 'E':
+                    t = Tile::GhostSpawnExit;
+                    ghostExitPositions.emplace_back(
+                        static_cast<float>(x),
+                        static_cast<float>(y)
+                    );
+                    break;
+
+                case 'S':
+                    t = Tile::GhostSpawnEntrance;
+                    ghostEntrancePositions.emplace_back(
+                        static_cast<float>(x),
+                        static_cast<float>(y)
+                    );
+                    break;
                 case 'T': t = Tile::Tunnel; break;
                 case ' ': t=Tile::Empty; break;
                 default:
@@ -137,11 +169,6 @@ glm::vec2 Grid::getPacmanStartPosition() const
     return pacmanStartPos;
 }
 
-glm::vec2 Grid::getGhostSpawnPosition() const
-{
-    return ghostStartPos;
-}
-
 void Grid::collectTile(int x, int y) {
     if (x >= 0 && x < width && y >= 0 && y < height) {
         tiles[y * width + x] = Tile::Empty;
@@ -155,7 +182,11 @@ void Grid::render(Shader& shader, unsigned int cubeVAO)
         for(int x = 0; x < width; x++)
         {
             Tile tile = getTile(x,y);
-            if (tile == Tile::Empty || tile == Tile::Tunnel || tile == Tile::GhostSpawnExit)
+            if (tile == Tile::Empty ||
+                tile == Tile::Tunnel ||
+                tile == Tile::GhostStart ||
+                tile == Tile::GhostSpawnExit ||
+                tile == Tile::PacmanStart)
             {
                 continue;
             }
@@ -176,9 +207,6 @@ void Grid::render(Shader& shader, unsigned int cubeVAO)
                     break;
                 case Tile::Energizer:
                     glUniform3f(objectColorLoc, 1.0f, 0.0f, 1.0f); // purple
-                    break;
-                case Tile::PacmanStart:
-                    glUniform3f(objectColorLoc, 1.0f, 1.0f, 1.0f); // white
                     break;
                 case Tile::GhostSpawnEntrance:
                     glUniform3f(objectColorLoc, 1.0f, 0.0f, 0.0f); // red

@@ -104,6 +104,22 @@ namespace
         return firstTile.x == secondTile.x &&
             firstTile.y == secondTile.y;
     }
+
+    glm::vec2 findClosestPosition(
+        const std::vector<glm::vec2>& positions,
+        const glm::vec2& reference
+    )
+    {
+        return *std::min_element(
+            positions.begin(),
+            positions.end(),
+            [&reference](const glm::vec2& first, const glm::vec2& second)
+            {
+                return glm::distance(first, reference) <
+                       glm::distance(second, reference);
+            }
+        );
+    }
 }
 
 Enemy::Enemy(Type enemy_type, Grid* grid_in, Player* player_in, glm::vec2 start_pos, GameState* gmState) : 
@@ -115,9 +131,18 @@ target(start_pos),
 position(start_pos),
 direction(0.0f, 0.0f),
 spawn_point(start_pos),
-spawn_entrance(grid_in->getGhostEntryPosition()),
 enemyRect{start_pos.x - HITBOX_SIZE / 2.0f, start_pos.y - HITBOX_SIZE / 2.0f, HITBOX_SIZE}
 {
+    spawn_entrance = findClosestPosition(
+        grid->getGhostEntryPositions(),
+        spawn_point
+    );
+    spawn_exit = findClosestPosition(
+        grid->getGhostExitPositions(),
+        spawn_entrance
+    );
+    target = spawn_exit;
+
     assign_scatter();
 
     switch (type)
@@ -308,8 +333,8 @@ void Enemy::update(float timer, int level, float deltaTime)
         {
             if(!left_spawn)
             {
-                target = grid->getGhostExitPosition();
-                if(isSameTile(position, grid->getGhostExitPosition()))
+                target = spawn_exit;
+                if(isSameTile(position, spawn_exit))
                 {
                     left_spawn = true;
                 }
@@ -351,8 +376,8 @@ void Enemy::update(float timer, int level, float deltaTime)
         {
             if(!left_spawn)
             {
-                target = grid->getGhostExitPosition();
-                if(isSameTile(position, grid->getGhostExitPosition()))
+                target = spawn_exit;
+                if(isSameTile(position, spawn_exit))
                 {
                     left_spawn = true;
                 }
@@ -396,7 +421,7 @@ void Enemy::update(float timer, int level, float deltaTime)
             left_spawn = false;
             state_change = false;
             color = color::get_enemy_color(type);
-            target = grid->getGhostExitPosition();
+            target = spawn_exit;
             calc_direction(position, target);
         }
         else
@@ -559,7 +584,7 @@ void Enemy::resetGhost()
     scaredUntil = 0.0f;
     color = color::get_enemy_color(type);
     direction = glm::vec2(0.0f, 0.0f);
-    target = grid->getGhostExitPosition();
+    target = spawn_exit;
     enemyRect.x = position.x - HITBOX_SIZE / 2.0f;
     enemyRect.y = position.y - HITBOX_SIZE / 2.0f;
     scheduleIndex = 0;
