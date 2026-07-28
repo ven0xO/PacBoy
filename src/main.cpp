@@ -10,6 +10,7 @@
 #include "../external/camera.h"
 #include "Game.hpp"
 #include <cmath>
+#include <algorithm>
 
 // GLFW callbacks and input handling.
 void processInput(GLFWwindow* window);
@@ -30,6 +31,7 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
 const glm::vec3 CAMERA_OFFSET = glm::vec3(0.0f, 5.0f, 10.0f);
+constexpr float MAX_DELTA_TIME = 0.05f;
 
 int main()
 {
@@ -143,7 +145,11 @@ int main()
     while(!glfwWindowShouldClose(window))
     {   
         float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
+        deltaTime = std::min(
+            currentFrame - lastFrame,
+            MAX_DELTA_TIME
+        );
+
         lastFrame = currentFrame;
         
         processInput(window);

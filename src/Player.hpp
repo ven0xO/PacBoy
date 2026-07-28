@@ -70,8 +70,8 @@ private:
     bool collided{false};
     bool energizer{false};
     int multiplier = 0;
-    const float MOVEMENT_THRESHOLD_VIS = 0.1;
-    const float MOVEMENT_THRESHOLD_POS = 0.05;
     static constexpr float SPEED = 3.0f;
     static constexpr float HITBOX_SIZE = 0.8f;
+
+    void move(float deltaTime);
 };

@@ -91,9 +91,6 @@ void Player::setDirection(Direction direct, bool updateCamera)
 
 bool Player::update(Grid& grid, float deltaTime)
 {
-    // Handles smooth movement while applying turns, wall checks, and pellet pickup at tile centers.
-    float fracX = visual_position.x - glm::floor(visual_position.x);
-    float fracY = visual_position.y - glm::floor(visual_position.y);
     
     if(curr_direction != glm::vec2(0.0f, 0.0f) && glm::length(curr_direction - camera_direction) > 0.01f)
     {
@@ -106,9 +103,13 @@ bool Player::update(Grid& grid, float deltaTime)
             turnFactor
         );
     }
+    constexpr float CENTER_EPSILON = 0.001f;
+    const glm::vec2 tileCenter = glm::round(visual_position);
 
-    if((fracX < 0.07f || fracX > 0.93f) && (fracY < 0.07f || fracY > 0.93f))
+
+    if (glm::length(visual_position - tileCenter) < CENTER_EPSILON)
     {
+        visual_position = tileCenter;
         // Turn and collision decisions are only stable near tile centers.
         collectPellet(round(visual_position.x), round(visual_position.y), grid);
         Tile new_pos_tile = grid.getTile(
@@ -143,7 +144,7 @@ bool Player::update(Grid& grid, float deltaTime)
         }
     }
 
-    visual_position += curr_direction * SPEED * deltaTime;
+    move(deltaTime);
 
    return true;
 }
@@ -207,4 +208,60 @@ void Player::resetPlayer()
     collided = false;
     energizer = false;
     multiplier = 0;
+}
+
+void Player::move(float deltaTime)
+{
+    constexpr float EPSILON = 0.0001f;
+
+    const float movement = SPEED * deltaTime;
+    glm::vec2 nextPosition =
+        visual_position + curr_direction * movement;
+
+    if (curr_direction.x > 0.0f)
+    {
+        const float nextCenter =
+            std::floor(visual_position.x + EPSILON) + 1.0f;
+
+        if (nextPosition.x >= nextCenter)
+        {
+            nextPosition.x = nextCenter;
+            nextPosition.y = std::round(visual_position.y);
+        }
+    }
+    else if (curr_direction.x < 0.0f)
+    {
+        const float nextCenter =
+            std::ceil(visual_position.x - EPSILON) - 1.0f;
+
+        if (nextPosition.x <= nextCenter)
+        {
+            nextPosition.x = nextCenter;
+            nextPosition.y = std::round(visual_position.y);
+        }
+    }
+    else if (curr_direction.y > 0.0f)
+    {
+        const float nextCenter =
+            std::floor(visual_position.y + EPSILON) + 1.0f;
+
+        if (nextPosition.y >= nextCenter)
+        {
+            nextPosition.y = nextCenter;
+            nextPosition.x = std::round(visual_position.x);
+        }
+    }
+    else if (curr_direction.y < 0.0f)
+    {
+        const float nextCenter =
+            std::ceil(visual_position.y - EPSILON) - 1.0f;
+
+        if (nextPosition.y <= nextCenter)
+        {
+            nextPosition.y = nextCenter;
+            nextPosition.x = std::round(visual_position.x);
+        }
+    }
+
+    visual_position = nextPosition;
 }

@@ -84,6 +84,26 @@ namespace
 
         return LEVEL_FIVE_PLUS_SCHEDULE;
     }
+
+    glm::ivec2 toTileCoordinates(const glm::vec2& position)
+    {
+        return glm::ivec2{
+            static_cast<int>(std::round(position.x)),
+            static_cast<int>(std::round(position.y))
+        };
+    }
+
+    bool isSameTile(
+        const glm::vec2& first,
+        const glm::vec2& second
+    )
+    {
+        const glm::ivec2 firstTile = toTileCoordinates(first);
+        const glm::ivec2 secondTile = toTileCoordinates(second);
+
+        return firstTile.x == secondTile.x &&
+            firstTile.y == secondTile.y;
+    }
 }
 
 Enemy::Enemy(Type enemy_type, Grid* grid_in, Player* player_in, glm::vec2 start_pos, GameState* gmState) : 
@@ -272,7 +292,7 @@ void Enemy::update(float timer, int level, float deltaTime)
                 );
                 random_position = possible_positions[dist(gen)];
             }
-            while (random_position == position - direction 
+            while (isSameTile(random_position, position - direction)
                     || grid->getTile(random_position.x, random_position.y) == Tile::GhostSpawnEntrance);
 
             calc_direction(position, random_position);
@@ -289,7 +309,7 @@ void Enemy::update(float timer, int level, float deltaTime)
             if(!left_spawn)
             {
                 target = grid->getGhostExitPosition();
-                if(position == grid->getGhostExitPosition())
+                if(isSameTile(position, grid->getGhostExitPosition()))
                 {
                     left_spawn = true;
                 }
@@ -303,7 +323,7 @@ void Enemy::update(float timer, int level, float deltaTime)
 
             for(glm::vec2 pos : possible_positions)
             {
-                if(pos != position - direction 
+                if(!isSameTile(pos, position - direction)
                     && (!left_spawn || grid->getTile(pos.x, pos.y) != Tile::GhostSpawnEntrance)
                 )
                 {
@@ -332,7 +352,7 @@ void Enemy::update(float timer, int level, float deltaTime)
             if(!left_spawn)
             {
                 target = grid->getGhostExitPosition();
-                if(position == grid->getGhostExitPosition())
+                if(isSameTile(position, grid->getGhostExitPosition()))
                 {
                     left_spawn = true;
                 }
@@ -346,7 +366,7 @@ void Enemy::update(float timer, int level, float deltaTime)
 
             for(glm::vec2 pos : possible_positions)
             {
-                if(pos != position - direction
+                if(!isSameTile(pos, position - direction)
                 && (!left_spawn || grid->getTile(pos.x, pos.y) != Tile::GhostSpawnEntrance)
                 )
                 {
@@ -365,12 +385,12 @@ void Enemy::update(float timer, int level, float deltaTime)
     }
     else if(state == State::Dead)
     {
-        if(position == spawn_entrance) 
+        if (isSameTile(position, spawn_entrance))
         {
             target = spawn_point;
         }
 
-        if(position == spawn_point)
+        if (isSameTile(position, spawn_point))
         {
             state = State::Chase;
             left_spawn = false;
@@ -391,7 +411,7 @@ void Enemy::update(float timer, int level, float deltaTime)
 
             for (const glm::vec2& possible_position : possible_positions)
             {
-                if (possible_position == reversePosition && possible_positions.size() > 1)
+                if (isSameTile(possible_position, reversePosition) && possible_positions.size() > 1)
                 {
                     continue;
                 }
