@@ -145,6 +145,7 @@ bool Player::update(Grid& grid, float deltaTime)
     }
 
     move(deltaTime);
+    visual_position = grid.wrapPosition(visual_position);
 
    return true;
 }

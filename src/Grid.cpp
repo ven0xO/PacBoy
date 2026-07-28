@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -61,6 +62,7 @@ bool Grid::loadFromFile(const std::string& path)
                 case 'G': t=Tile::GhostStart; ghostStartPos={x,y}; break;
                 case 'E': t=Tile::GhostSpawnExit; ghostExitPos={x,y}; break;
                 case 'S': t=Tile::GhostSpawnEntrance; ghostEntrancePos={x,y}; break;
+                case 'T': t = Tile::Tunnel; break;
                 case ' ': t=Tile::Empty; break;
                 default:
                     std::cerr
@@ -91,12 +93,43 @@ int Grid::getHeight() const
 
 Tile Grid::getTile(int x, int y) const
 {
-    if(x < 0 || x >= width || y < 0 || y >= height)
+    const bool validX = x >= 0 && x < width;
+    const bool validY = y >= 0 && y < height;
+
+    if (validX && validY)
     {
-        std::cerr << "Invalid tile coordinates: (" << x << ", " << y << ")\n";
-        return Tile::Empty;
+        return tiles[y * width + x];
     }
-    return tiles[y*width+x];
+
+    if (validY)
+    {
+        if (x == -1 && tiles[y * width] == Tile::Tunnel)
+        {
+            return Tile::Tunnel;
+        }
+
+        if (x == width && tiles[y * width + width - 1] == Tile::Tunnel)
+        {
+            return Tile::Tunnel;
+        }
+    }
+
+    if (validX)
+    {
+        if (y == -1 &&
+            tiles[x] == Tile::Tunnel)
+        {
+            return Tile::Tunnel;
+        }
+
+        if (y == height &&
+            tiles[(height - 1) * width + x] == Tile::Tunnel)
+        {
+            return Tile::Tunnel;
+        }
+    }
+
+    return Tile::Wall;
 }
 
 glm::vec2 Grid::getPacmanStartPosition() const
@@ -122,7 +155,10 @@ void Grid::render(Shader& shader, unsigned int cubeVAO)
         for(int x = 0; x < width; x++)
         {
             Tile tile = getTile(x,y);
-            if (tile == Tile::Empty) continue;
+            if (tile == Tile::Empty || tile == Tile::Tunnel || tile == Tile::GhostSpawnExit)
+            {
+                continue;
+            }
 
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(x, 0.0f, y));
@@ -166,4 +202,36 @@ std::vector<glm::vec2> Grid::possible_moves(glm::vec2 position)
     if(getTile(position.x + 1, position.y) != Tile::Wall) result.push_back({position.x + 1.0f, position.y});
 
     return result;
+}
+
+glm::vec2 Grid::wrapPosition(glm::vec2 position) const
+{
+    const int tileX =
+        static_cast<int>(std::round(position.x));
+
+    const int tileY =
+        static_cast<int>(std::round(position.y));
+
+    if (position.x <= -1.0f &&
+        getTile(-1, tileY) == Tile::Tunnel)
+    {
+        position.x = static_cast<float>(width - 1);
+    }
+    else if (position.x >= static_cast<float>(width) &&
+             getTile(width, tileY) == Tile::Tunnel)
+    {
+        position.x = 0.0f;
+    }
+    else if (position.y <= -1.0f &&
+             getTile(tileX, -1) == Tile::Tunnel)
+    {
+        position.y = static_cast<float>(height - 1);
+    }
+    else if (position.y >= static_cast<float>(height) &&
+             getTile(tileX, height) == Tile::Tunnel)
+    {
+        position.y = 0.0f;
+    }
+
+    return position;
 }

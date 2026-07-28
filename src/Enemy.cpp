@@ -480,7 +480,7 @@ void Enemy::move(float deltaTime)
         }
     }
 
-    position = nextPosition;
+    position = grid->wrapPosition(nextPosition);
 
     enemyRect.x = position.x - HITBOX_SIZE / 2.0f;
     enemyRect.y = position.y - HITBOX_SIZE / 2.0f;

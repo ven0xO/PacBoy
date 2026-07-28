@@ -14,7 +14,8 @@ enum class Tile {
     PacmanStart,
     GhostStart,
     GhostSpawnEntrance,
-    GhostSpawnExit
+    GhostSpawnExit,
+    Tunnel
 };
 
 class Grid
@@ -33,6 +34,7 @@ public:
     glm::vec2 getGhostEntryPosition() const {return ghostEntrancePos;}
     glm::vec2 getGhostExitPosition() const {return ghostExitPos;}
     std::vector<glm::vec2> possible_moves(glm::vec2 position);
+    glm::vec2 wrapPosition(glm::vec2 position) const;
 private:
     std::vector<Tile> tiles;
     int width;
