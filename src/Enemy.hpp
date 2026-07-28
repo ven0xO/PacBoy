@@ -75,6 +75,7 @@ private:
     bool energizerChange = false;
     int last_timer {-1};
     float scaredUntil {0};
+    float releaseDelay{0.0f};
 
     Enemy* red_ghost{nullptr};
     Grid* grid;

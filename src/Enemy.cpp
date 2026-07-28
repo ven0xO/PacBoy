@@ -48,6 +48,25 @@ spawn_entrance(grid_in->getGhostEntryPosition()),
 enemyRect{start_pos.x - HITBOX_SIZE / 2.0f, start_pos.y - HITBOX_SIZE / 2.0f, HITBOX_SIZE}
 {
     assign_scatter();
+
+    switch (type)
+    {
+        case Type::Red:
+            releaseDelay = 0.0f;
+            break;
+
+        case Type::Pink:
+            releaseDelay = 2.0f;
+            break;
+
+        case Type::Blue:
+            releaseDelay = 5.0f;
+            break;
+
+        case Type::Orange:
+            releaseDelay = 8.0f;
+            break;
+    }
 }
 
 void Enemy::set_red_ghost(Enemy* red_ghost_v)
@@ -201,6 +220,12 @@ void Enemy::update(float timer, int level, float deltaTime)
                 }
             }
         }
+    }
+
+    if (!left_spawn && timer < releaseDelay)
+    {
+        direction = glm::vec2(0.0f, 0.0f);
+        return;
     }
     
     if (!is_at_center(position))
