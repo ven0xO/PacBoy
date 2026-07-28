@@ -45,14 +45,13 @@ class Game
 {
 public:
     Game(const std::string& map_path, int screen_width, int screen_height);
-    float getTimerOffset() const { return timerOffset; }
     Player* getPlayerPtr() const { return player.get(); }
     Grid* getGridPtr() { return &gameGrid; }
     bool isInitialized() const { return initialized; }
 
     void update(float currentFrame, float deltaTime);
     void render(Shader& shader, unsigned int cubeVAO);
-    void nextLevel(float& lastFrame, const float currentFrame);
+    void nextLevel();
     void processPlayerInput(GLFWwindow* window, const float currentFrame);
     bool startNewGame(float currentFrame);
     bool resetRound(float currentFrame);
@@ -79,7 +78,6 @@ private:
     std::unique_ptr<Enemy> orangeEnemy;
 
     float invulnerableUntil{0.0f};
-    float timerOffset{0.0f};
     float readyTimer{0.0f};
     float gameplayTimer{0.0f};
     std::string mapPath;

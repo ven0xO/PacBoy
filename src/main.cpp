@@ -142,7 +142,7 @@ int main()
     // Main loop
     while(!glfwWindowShouldClose(window))
     {   
-        float currentFrame = glfwGetTime() - game.getTimerOffset();
+        float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         
@@ -186,7 +186,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        game.nextLevel(lastFrame, currentFrame);
+        game.nextLevel();
     }
 
     glDeleteVertexArrays(1, &VAO);

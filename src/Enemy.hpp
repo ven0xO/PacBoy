@@ -3,6 +3,7 @@
 #include "Grid.hpp"
 #include "Rect.hpp"
 #include "GameState.hpp"
+#include <cstddef>
 
 class Player;
 class Shader;
@@ -73,9 +74,9 @@ private:
 
     bool state_change = false;
     bool energizerChange = false;
-    int last_timer {-1};
     float scaredUntil {0};
     float releaseDelay{0.0f};
+    std::size_t scheduleIndex{0};
 
     Enemy* red_ghost{nullptr};
     Grid* grid;

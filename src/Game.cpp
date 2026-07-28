@@ -154,7 +154,7 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
     glEnable(GL_DEPTH_TEST);
 }
 
-void Game::nextLevel(float& lastFrame, const float currentFrame)
+void Game::nextLevel()
 {
     if(phase != GamePhase::Playing) return;
 
@@ -172,8 +172,6 @@ void Game::nextLevel(float& lastFrame, const float currentFrame)
             cyanEnemy->resetGhost();
             orangeEnemy->resetGhost();
 
-            lastFrame = 0.0f;
-            timerOffset += currentFrame;
             gameplayTimer = 0.0f;
             invulnerableUntil = 0.0f;
         }

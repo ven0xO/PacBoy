@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <vector>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "../external/shader_s.h"
@@ -32,6 +33,56 @@ namespace color
         }
 
         return red_color;
+    }
+}
+
+namespace
+{
+    struct ModeTransition
+    {
+        float time;
+        State nextState;
+    };
+
+    const std::vector<ModeTransition> LEVEL_ONE_SCHEDULE{
+        {7.0f, State::Chase},
+        {27.0f, State::Scatter},
+        {34.0f, State::Chase},
+        {54.0f, State::Scatter},
+        {59.0f, State::Chase},
+        {79.0f, State::Scatter},
+        {84.0f, State::Chase}
+    };
+
+    const std::vector<ModeTransition> LEVELS_TWO_TO_FOUR_SCHEDULE{
+        {7.0f, State::Chase},
+        {27.0f, State::Scatter},
+        {34.0f, State::Chase},
+        {54.0f, State::Scatter},
+        {59.0f, State::Chase}
+    };
+
+    const std::vector<ModeTransition> LEVEL_FIVE_PLUS_SCHEDULE{
+        {5.0f, State::Chase},
+        {25.0f, State::Scatter},
+        {30.0f, State::Chase},
+        {50.0f, State::Scatter},
+        {55.0f, State::Chase}
+    };
+
+    const std::vector<ModeTransition>& getSchedule(int level)
+    {
+        if (level == 1)
+        {
+            return LEVEL_ONE_SCHEDULE;
+        }
+
+        if (level >= 2 && level <= 4)
+        {
+            return LEVELS_TWO_TO_FOUR_SCHEDULE;
+        }
+
+        return LEVEL_FIVE_PLUS_SCHEDULE;
     }
 }
 
@@ -148,9 +199,7 @@ glm::vec2 Enemy::find_target()
 
 void Enemy::update(float timer, int level, float deltaTime)
 {
-    int currentSecond = static_cast<int>(timer);
 
-    
     bool isScared = player->getEnergizer();
 
     if (state == State::Scared && timer >= scaredUntil)
@@ -170,55 +219,20 @@ void Enemy::update(float timer, int level, float deltaTime)
     }
     else if (state != State::Dead && timer >= scaredUntil)
     {
-        // Scatter/chase schedules change at fixed timestamps for each level range.
-        if (currentSecond != last_timer)
+        const auto& schedule = getSchedule(level);
+
+        while (scheduleIndex < schedule.size() &&
+            timer >= schedule[scheduleIndex].time)
         {
-            last_timer = currentSecond;
-            if(level == 1)
+            const ModeTransition& transition = schedule[scheduleIndex];
+
+            if (state != transition.nextState)
             {
-                if(currentSecond == 7 || currentSecond == 27 || currentSecond == 34 || currentSecond == 54 || currentSecond == 59 || currentSecond == 79 || currentSecond == 84)
-                {state_change = true;}
-
-
-                if(currentSecond == 27 || currentSecond == 54 || currentSecond == 79)
-                {
-                    state = State::Scatter;
-                } 
-                else if(currentSecond == 7 || currentSecond == 34 || currentSecond == 59 || currentSecond >= 84)
-                {
-                    state = State::Chase;
-                }
+                state = transition.nextState;
+                state_change = true;
             }
-            else if(level >= 2 && level <= 4)
-            {
-                if(currentSecond == 7 || currentSecond == 27 || currentSecond == 34 || currentSecond == 54 || currentSecond == 59)
-                {state_change = true;}
 
-
-                if(currentSecond == 27 || currentSecond == 54)
-                {
-                    state = State::Scatter;
-                } 
-                else if(currentSecond == 7 || currentSecond == 34 || currentSecond >= 59)
-                {
-                    state = State::Chase;
-                }
-            }
-            else if(level >= 5)
-            {
-                if(currentSecond == 5 || currentSecond == 25 || currentSecond == 30 || currentSecond == 50 || currentSecond == 55)
-                {state_change = true;}
-
-
-                if(currentSecond == 25 || currentSecond == 50)
-                {
-                    state = State::Scatter;
-                } 
-                else if(currentSecond == 5 || currentSecond == 30 || currentSecond >= 55)
-                {
-                    state = State::Chase;
-                }
-            }
+            ++scheduleIndex;
         }
     }
 
@@ -522,11 +536,11 @@ void Enemy::resetGhost()
     left_spawn = false;
     state = State::Scatter;
     stateBeforeChange = State::Scatter;
-    last_timer = -1;
     scaredUntil = 0.0f;
     color = color::get_enemy_color(type);
     direction = glm::vec2(0.0f, 0.0f);
     target = grid->getGhostExitPosition();
     enemyRect.x = position.x - HITBOX_SIZE / 2.0f;
     enemyRect.y = position.y - HITBOX_SIZE / 2.0f;
+    scheduleIndex = 0;
 }
