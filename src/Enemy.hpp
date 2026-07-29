@@ -46,12 +46,13 @@ public:
     }
     void set_position(glm::vec2 pos) { position = pos; }
     void assign_scatter();
+    void enterScared(float timer);
     void update(float timer, int level, float deltaTime);
     void move(float deltaTime);
     void calc_direction(glm::vec2 curr, glm::vec2 dest);
     void render(Shader& shader, unsigned int cubeVAO);
     void renderTargetBeam(Shader& shader, unsigned int cubeVAO);
-    bool checkCollision(const Rect& playerRect);
+    bool checkCollision(const Rect& playerRect) const;
     void resetGhost();
     void resetGhost(const glm::vec2& spawnPosition);
     
@@ -59,7 +60,7 @@ public:
 private:
     Type type;
     State state = State::Scatter;
-    State stateBeforeChange{State::Scatter};
+    State activeMode{State::Scatter};
 
     glm::vec2 target;
     glm::vec2 scatter_target;
@@ -72,12 +73,11 @@ private:
     Rect enemyRect;
 
     bool is_at_center(glm::vec2 pos);
-    bool is_spawn_gate(glm::vec2 pos);
 
     bool state_change = false;
-    bool energizerChange = false;
     float scaredUntil {0};
     float releaseDelay{0.0f};
+    float scheduleTimer{0.0f};
     std::size_t scheduleIndex{0};
 
     Enemy* red_ghost{nullptr};

@@ -3,11 +3,31 @@
 #include <algorithm>
 #include <iostream>
 
-Game::Game(const std::string& map_path, int screen_width, int screen_height) 
-            : hud(screen_width, screen_height),
-            mapPath(map_path)
+namespace
 {
-    if (!hud.isValid() || !gameGrid.loadFromFile(map_path))
+    constexpr float READY_DURATION{2.0f};
+    constexpr float LEVEL_COMPLETE_DURATION{2.5f};
+    constexpr float HIT_INVULNERABILITY_DURATION{1.5f};
+}
+
+Game::Game(
+    const std::vector<std::string>& level_paths,
+    int screen_width,
+    int screen_height
+)
+            : hud(screen_width, screen_height),
+            levelPaths(level_paths)
+{
+    if (!hud.isValid() || levelPaths.empty())
+    {
+        if (levelPaths.empty())
+        {
+            std::cerr << "No level files configured.\n";
+        }
+        return;
+    }
+
+    if (!gameGrid.loadFromFile(levelPaths.front()))
     {
         return;
     }
@@ -73,6 +93,15 @@ void Game::update(float currentFrame, float deltaTime)
     gameplayTimer += deltaTime;
 
     player->update(gameGrid, deltaTime);
+
+    if (player->getEnergizer())
+    {
+        redEnemy->enterScared(gameplayTimer);
+        pinkEnemy->enterScared(gameplayTimer);
+        cyanEnemy->enterScared(gameplayTimer);
+        orangeEnemy->enterScared(gameplayTimer);
+        player->resetEnergizer();
+    }
     
     int level = gameState.getLevel();
 
@@ -81,19 +110,7 @@ void Game::update(float currentFrame, float deltaTime)
     cyanEnemy->update(gameplayTimer, level, deltaTime);
     orangeEnemy->update(gameplayTimer, level, deltaTime);
 
-    if(player->getEnergizer()) player->resetEnergizer();
-
-    Rect playerRect = player->getPlayerRect();
-
-    bool red_collision = redEnemy->checkCollision(playerRect);
-    bool pink_collision = pinkEnemy->checkCollision(playerRect);
-    bool cyan_collision = cyanEnemy->checkCollision(playerRect);
-    bool orange_collision = orangeEnemy->checkCollision(playerRect);
-
-    if(red_collision) checkEnemyCollision(redEnemy.get(), player.get(), currentFrame);
-    if(pink_collision) checkEnemyCollision(pinkEnemy.get(), player.get(), currentFrame);
-    if(cyan_collision) checkEnemyCollision(cyanEnemy.get(), player.get(), currentFrame);
-    if(orange_collision) checkEnemyCollision(orangeEnemy.get(), player.get(), currentFrame);
+    handleEnemyCollisions(currentFrame);
 }
 
 void Game::render(Shader& shader, unsigned int cubeVAO)
@@ -141,6 +158,10 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
     {
         hud.renderPause(static_cast<int>(selectedPauseMenuOption));
     }
+    else if(phase == GamePhase::LevelComplete)
+    {
+        hud.renderLevelComplete(gameState);
+    }
     else if(phase == GamePhase::GameOver)
     {
         hud.renderGameOver(gameState);
@@ -153,47 +174,78 @@ void Game::render(Shader& shader, unsigned int cubeVAO)
     glEnable(GL_DEPTH_TEST);
 }
 
-void Game::nextLevel()
+void Game::nextLevel(float currentFrame)
 {
-    if(phase != GamePhase::Playing) return;
-
-    
-    if(gameState.checkIfNextLevel())
+    if (
+        phase == GamePhase::Playing &&
+        gameState.checkIfNextLevel()
+    )
     {
-        if(gameGrid.loadFromFile(mapPath))
-        {
-            gameState.nextLevel();
-            gameState.setPelletCount(gameGrid.getInitPelletCount());
-            gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());
+        phase = GamePhase::LevelComplete;
+        levelCompleteUntil =
+            currentFrame + LEVEL_COMPLETE_DURATION;
+        return;
+    }
 
-            resetEntitiesForLoadedLevel();
-
-            gameplayTimer = 0.0f;
-            invulnerableUntil = 0.0f;
-        }
+    if (
+        phase == GamePhase::LevelComplete &&
+        currentFrame >= levelCompleteUntil
+    )
+    {
+        loadNextLevel(currentFrame);
     }
 }
 
-void Game::checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float currentFrame)
+void Game::handleEnemyCollisions(float currentFrame)
 {
-    State currentState = enemyPtr->get_state();
+    const Rect playerRect = player->getPlayerRect();
+    const std::array<Enemy*, 4> enemies{
+        redEnemy.get(),
+        pinkEnemy.get(),
+        cyanEnemy.get(),
+        orangeEnemy.get()
+    };
 
-    if(currentState == State::Scared)
-    {
-        enemyPtr->set_state_dead();
-        playerPtr->killGhost();
-    }
-    else if(currentState != State::Dead && currentFrame >= invulnerableUntil)
+    const bool hitByDangerousGhost = std::any_of(
+        enemies.begin(),
+        enemies.end(),
+        [&playerRect](const Enemy* enemy)
+        {
+            const State state = enemy->get_state();
+            return enemy->checkCollision(playerRect) &&
+                (state == State::Chase || state == State::Scatter);
+        }
+    );
+
+    // A dangerous collision has priority and can remove at most one life.
+    if (
+        hitByDangerousGhost &&
+        gameplayTimer >= invulnerableUntil
+    )
     {
         gameState.loseLife();
 
-        if(!gameState.isGameOver())
+        if (!gameState.isGameOver())
         {
             resetRound(currentFrame);
         }
         else
         {
             phase = GamePhase::GameOver;
+        }
+
+        return;
+    }
+
+    for (Enemy* enemy : enemies)
+    {
+        if (
+            enemy->get_state() == State::Scared &&
+            enemy->checkCollision(playerRect)
+        )
+        {
+            enemy->set_state_dead();
+            player->killGhost();
         }
     }
 }
@@ -312,6 +364,13 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
             phase = GamePhase::MainMenu;
         }
     }
+    else if(phase == GamePhase::LevelComplete)
+    {
+        if(keyEnter && !prevKeyEnter)
+        {
+            loadNextLevel(currentFrame);
+        }
+    }
     else if(phase == GamePhase::GameOver)
     {
         if (keyEnter && !prevKeyEnter)
@@ -390,12 +449,16 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
 
 bool Game::startNewGame(float currentFrame)
 {
-    if (!gameGrid.loadFromFile(mapPath))
+    if (
+        levelPaths.empty() ||
+        !gameGrid.loadFromFile(levelPaths.front())
+    )
     {
         std::cerr << "Failed to start a new game.\n";
         return false;
     }
 
+    currentLevelIndex = 0;
     gameState.resetState();
     gameState.setPelletCount(gameGrid.getInitPelletCount());
     gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());
@@ -403,8 +466,9 @@ bool Game::startNewGame(float currentFrame)
     resetEntitiesForLoadedLevel();
 
     gameplayTimer = 0.0f;
-    readyTimer = currentFrame + 2.0f;
+    readyTimer = currentFrame + READY_DURATION;
     invulnerableUntil = 0.0f;
+    levelCompleteUntil = 0.0f;
     enteredName.clear();
 
     selectedMenuOption = MainMenuOption::StartGame;
@@ -419,6 +483,35 @@ bool Game::startNewGame(float currentFrame)
     prevKeyP = false;
     prevLetterKeys.fill(false);
 
+    phase = GamePhase::Ready;
+    return true;
+}
+
+bool Game::loadNextLevel(float currentFrame)
+{
+    // Reaching the end starts the configured level list again.
+    const std::size_t nextLevelIndex =
+        (currentLevelIndex + 1) % levelPaths.size();
+
+    if (!gameGrid.loadFromFile(levelPaths[nextLevelIndex]))
+    {
+        std::cerr << "Failed to load the next level.\n";
+        levelCompleteUntil =
+            currentFrame + LEVEL_COMPLETE_DURATION;
+        return false;
+    }
+
+    currentLevelIndex = nextLevelIndex;
+    gameState.nextLevel();
+    gameState.setPelletCount(gameGrid.getInitPelletCount());
+    gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());
+
+    resetEntitiesForLoadedLevel();
+
+    gameplayTimer = 0.0f;
+    readyTimer = currentFrame + READY_DURATION;
+    invulnerableUntil = 0.0f;
+    levelCompleteUntil = 0.0f;
     phase = GamePhase::Ready;
     return true;
 }
@@ -441,8 +534,9 @@ bool Game::resetRound(float currentFrame)
     orangeEnemy->resetGhost();
 
     gameplayTimer = 0.0f;
-    readyTimer = currentFrame + 2.0f;
-    invulnerableUntil = currentFrame + 1.5f;
+    readyTimer = currentFrame + READY_DURATION;
+    invulnerableUntil = HIT_INVULNERABILITY_DURATION;
+    levelCompleteUntil = 0.0f;
 
     selectedMenuOption = MainMenuOption::StartGame;
     selectedPauseMenuOption = PauseMenuOption::Resume;

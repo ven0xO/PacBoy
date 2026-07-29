@@ -17,6 +17,7 @@ public:
     void render(const GameState& state);
     void renderMainMenu(int selected);
     void renderReady();
+    void renderLevelComplete(const GameState& state);
     void renderPause(int selected);
     void renderScoreboard(const Scoreboard& scoreboard);
     void renderGameOver(const GameState& state);

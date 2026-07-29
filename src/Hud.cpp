@@ -485,6 +485,96 @@ void Hud::renderReady()
     );
 }
 
+void Hud::renderLevelComplete(const GameState& state)
+{
+    const glm::vec3 yellow(1.0f, 0.85f, 0.0f);
+    const glm::vec3 blue(0.0f, 0.4f, 1.0f);
+    const glm::vec3 darkBlue(0.01f, 0.04f, 0.13f);
+    const glm::vec3 lightGray(0.86f, 0.88f, 0.94f);
+
+    drawRectangle(
+        0.0f,
+        0.0f,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        glm::vec3(0.0f),
+        0.78f
+    );
+
+    const auto textWidth = [](const std::string& text, float scale)
+    {
+        return
+            (
+                static_cast<float>(text.size()) *
+                (PixelFont::GLYPH_WIDTH + PixelFont::GLYPH_SPACING) -
+                PixelFont::GLYPH_SPACING
+            ) * scale;
+    };
+
+    const auto centeredX =
+        [this, &textWidth](const std::string& text, float scale)
+    {
+        return
+            (static_cast<float>(width) - textWidth(text, scale)) / 2.0f;
+    };
+
+    drawRectangle(80.0f, 95.0f, 640.0f, 410.0f, blue);
+    drawRectangle(84.0f, 99.0f, 632.0f, 402.0f, darkBlue, 0.96f);
+
+    const std::string title{"LEVEL COMPLETE"};
+    constexpr float titleScale{6.0f};
+    const float titleX = centeredX(title, titleScale);
+
+    renderText(
+        title,
+        titleX + 4.0f,
+        139.0f,
+        titleScale,
+        glm::vec3(0.18f, 0.12f, 0.0f)
+    );
+    renderText(title, titleX, 135.0f, titleScale, yellow);
+
+    drawRectangle(160.0f, 220.0f, 480.0f, 3.0f, blue);
+
+    const std::string level{
+        "LEVEL " + std::to_string(state.getLevel())
+    };
+    constexpr float informationScale{3.0f};
+
+    renderText(
+        level,
+        centeredX(level, informationScale),
+        260.0f,
+        informationScale,
+        lightGray
+    );
+
+    const std::string score{
+        "SCORE " + std::to_string(state.getScore())
+    };
+
+    renderText(
+        score,
+        centeredX(score, informationScale),
+        310.0f,
+        informationScale,
+        yellow
+    );
+
+    const std::string prompt{"ENTER TO CONTINUE"};
+    constexpr float promptScale{2.5f};
+
+    drawRectangle(190.0f, 398.0f, 420.0f, 52.0f, blue);
+    drawRectangle(194.0f, 402.0f, 412.0f, 44.0f, darkBlue);
+    renderText(
+        prompt,
+        centeredX(prompt, promptScale),
+        414.0f,
+        promptScale,
+        lightGray
+    );
+}
+
 void Hud::renderPause(int selected)
 {
     const glm::vec3 yellow(1.0f, 0.85f, 0.0f);

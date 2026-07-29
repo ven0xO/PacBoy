@@ -105,7 +105,11 @@ int main()
     }
 
 
-    Game game("./assets/levels/classic_inspired.txt", SCR_WIDTH, SCR_HEIGHT);
+    Game game(
+        {"./assets/levels/classic_inspired.txt"},
+        SCR_WIDTH,
+        SCR_HEIGHT
+    );
     if (!game.isInitialized())
     {
         glfwTerminate();
@@ -192,7 +196,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        game.nextLevel();
+        game.nextLevel(currentFrame);
     }
 
     glDeleteVertexArrays(1, &VAO);

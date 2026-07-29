@@ -3,8 +3,8 @@
 
 #include <random>
 #include <algorithm>
+#include <array>
 #include <cmath>
-#include <limits>
 #include <vector>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -38,6 +38,14 @@ namespace color
 
 namespace
 {
+    constexpr float SCARED_DURATION{6.0f};
+    constexpr std::array<float, 4> GHOST_RELEASE_DELAYS{
+        0.0f,
+        2.0f,
+        5.0f,
+        8.0f
+    };
+
     struct ModeTransition
     {
         float time;
@@ -120,6 +128,96 @@ namespace
             }
         );
     }
+
+    std::vector<glm::vec2> getCandidateMoves(
+        Grid* grid,
+        const glm::vec2& position,
+        const glm::vec2& direction,
+        bool allowSpawnGate
+    )
+    {
+        std::vector<glm::vec2> moves =
+            grid->possible_moves(position);
+
+        if (!allowSpawnGate)
+        {
+            moves.erase(
+                std::remove_if(
+                    moves.begin(),
+                    moves.end(),
+                    [grid](const glm::vec2& move)
+                    {
+                        return grid->getTile(move.x, move.y) ==
+                            Tile::GhostSpawnEntrance;
+                    }
+                ),
+                moves.end()
+            );
+        }
+
+        if (moves.size() > 1)
+        {
+            const glm::vec2 reversePosition =
+                position - direction;
+
+            moves.erase(
+                std::remove_if(
+                    moves.begin(),
+                    moves.end(),
+                    [&reversePosition](const glm::vec2& move)
+                    {
+                        return isSameTile(move, reversePosition);
+                    }
+                ),
+                moves.end()
+            );
+        }
+
+        return moves;
+    }
+
+    glm::vec2 getClosestMove(
+        const std::vector<glm::vec2>& moves,
+        const glm::vec2& position,
+        const glm::vec2& target
+    )
+    {
+        if (moves.empty())
+        {
+            return position;
+        }
+
+        return *std::min_element(
+            moves.begin(),
+            moves.end(),
+            [&target](const glm::vec2& first, const glm::vec2& second)
+            {
+                return glm::distance(first, target) <
+                    glm::distance(second, target);
+            }
+        );
+    }
+
+    glm::vec2 getRandomMove(
+        const std::vector<glm::vec2>& moves,
+        const glm::vec2& position
+    )
+    {
+        if (moves.empty())
+        {
+            return position;
+        }
+
+        static std::random_device randomDevice;
+        static std::mt19937 generator(randomDevice());
+
+        std::uniform_int_distribution<std::size_t> distribution(
+            0,
+            moves.size() - 1
+        );
+
+        return moves[distribution(generator)];
+    }
 }
 
 Enemy::Enemy(Type enemy_type, Grid* grid_in, Player* player_in, glm::vec2 start_pos, GameState* gmState) : 
@@ -144,25 +242,8 @@ enemyRect{start_pos.x - HITBOX_SIZE / 2.0f, start_pos.y - HITBOX_SIZE / 2.0f, HI
     target = spawn_exit;
 
     assign_scatter();
-
-    switch (type)
-    {
-        case Type::Red:
-            releaseDelay = 0.0f;
-            break;
-
-        case Type::Pink:
-            releaseDelay = 2.0f;
-            break;
-
-        case Type::Blue:
-            releaseDelay = 5.0f;
-            break;
-
-        case Type::Orange:
-            releaseDelay = 8.0f;
-            break;
-    }
+    releaseDelay =
+        GHOST_RELEASE_DELAYS[static_cast<std::size_t>(type)];
 }
 
 void Enemy::set_red_ghost(Enemy* red_ghost_v)
@@ -242,38 +323,48 @@ glm::vec2 Enemy::find_target()
     return target;
 }
 
+void Enemy::enterScared(float timer)
+{
+    scaredUntil = timer + SCARED_DURATION;
+
+    if (state == State::Dead)
+    {
+        return;
+    }
+
+    state = State::Scared;
+    state_change = true;
+    color = color::blue_color;
+}
+
 void Enemy::update(float timer, int level, float deltaTime)
 {
+    const bool scaredPeriodActive = timer < scaredUntil;
 
-    bool isScared = player->getEnergizer();
-
-    if (state == State::Scared && timer >= scaredUntil)
+    if (state == State::Scared && !scaredPeriodActive)
     {
         color = color::get_enemy_color(type);
-        state = stateBeforeChange;
+        state = activeMode;
     }
-    if(isScared && state != State::Dead)
+
+    // The Scatter/Chase schedule pauses for the whole Scared period.
+    if (!scaredPeriodActive)
     {
-        if(state != State::Scared)
-        {
-            stateBeforeChange = state;
-        }
-        state = State::Scared;
-        scaredUntil = timer + 6;
-        color = color::blue_color;
-    }
-    else if (state != State::Dead && timer >= scaredUntil)
-    {
+        scheduleTimer += deltaTime;
         const auto& schedule = getSchedule(level);
 
         while (scheduleIndex < schedule.size() &&
-            timer >= schedule[scheduleIndex].time)
+            scheduleTimer >= schedule[scheduleIndex].time)
         {
             const ModeTransition& transition = schedule[scheduleIndex];
+            activeMode = transition.nextState;
 
-            if (state != transition.nextState)
+            if (
+                (state == State::Chase || state == State::Scatter) &&
+                state != activeMode
+            )
             {
-                state = transition.nextState;
+                state = activeMode;
                 state_change = true;
             }
 
@@ -294,118 +385,99 @@ void Enemy::update(float timer, int level, float deltaTime)
     }
     position = glm::round(position);
 
+    if (!left_spawn && isSameTile(position, spawn_exit))
+    {
+        left_spawn = true;
+    }
+
+    const bool allowSpawnGate =
+        !left_spawn || state == State::Dead;
+
+    bool directionReversed = false;
+
+    if (state_change)
+    {
+        state_change = false;
+
+        if (glm::length(direction) > 0.0f)
+        {
+            const glm::vec2 reversePosition =
+                position - direction;
+
+            const Tile reverseTile =
+                grid->getTile(reversePosition.x, reversePosition.y);
+
+            if (
+                reverseTile != Tile::Wall &&
+                (allowSpawnGate ||
+                 reverseTile != Tile::GhostSpawnEntrance)
+            )
+            {
+                direction *= -1.0f;
+                directionReversed = true;
+            }
+        }
+    }
+
     // Direction changes are made only at tile centers to keep grid movement stable.
     if(state == State::Scared)
     {
-        if(state_change)
+        if (!directionReversed)
         {
-            direction *= -1.0f;
-            state_change = false;
-        } else
-        {
-            std::vector<glm::vec2> possible_positions = grid->possible_moves(position);
-
-            static std::random_device rd;
-            static std::mt19937 gen(rd());
-            glm::vec2 random_position;
-
-            do
-            {
-                std::uniform_int_distribution<std::size_t> dist(
-                0,
-                possible_positions.size() - 1
+            const std::vector<glm::vec2> moves =
+                getCandidateMoves(
+                    grid,
+                    position,
+                    direction,
+                    allowSpawnGate
                 );
-                random_position = possible_positions[dist(gen)];
-            }
-            while (isSameTile(random_position, position - direction)
-                    || grid->getTile(random_position.x, random_position.y) == Tile::GhostSpawnEntrance);
 
-            calc_direction(position, random_position);
+            if (!left_spawn)
+            {
+                target = spawn_exit;
+                calc_direction(
+                    position,
+                    getClosestMove(moves, position, target)
+                );
+            }
+            else
+            {
+                calc_direction(
+                    position,
+                    getRandomMove(moves, position)
+                );
+            }
         }
     }
-    else if(state == State::Chase)
+    else if(state == State::Chase || state == State::Scatter)
     {
-        if(state_change)
-        {
-            direction *= -1.0f;
-            state_change = false;
-        } else
+        if (!directionReversed)
         {
             if(!left_spawn)
             {
                 target = spawn_exit;
-                if(isSameTile(position, spawn_exit))
-                {
-                    left_spawn = true;
-                }
             }
-            else    find_target();
-            
-            std::vector<glm::vec2> possible_positions = grid->possible_moves(position);
-
-            float best_val = std::numeric_limits<float>::max();
-            glm::vec2 next_move = position;
-
-            for(glm::vec2 pos : possible_positions)
+            else if (state == State::Chase)
             {
-                if(!isSameTile(pos, position - direction)
-                    && (!left_spawn || grid->getTile(pos.x, pos.y) != Tile::GhostSpawnEntrance)
-                )
-                {
-                    float dist = glm::distance(pos, target);
-
-                    if(dist < best_val)
-                    {
-                        best_val = dist;
-                        next_move = pos;
-                    }
-                }
+                find_target();
             }
-
-            calc_direction(position, next_move);
-        }
-        
-    }
-    else if(state == State::Scatter)
-    {
-        if(state_change)
-        {
-            direction *= -1.0f;
-            state_change = false;
-        }else
-        {
-            if(!left_spawn)
+            else
             {
-                target = spawn_exit;
-                if(isSameTile(position, spawn_exit))
-                {
-                    left_spawn = true;
-                }
-            }
-            else    target = scatter_target;
-            
-            std::vector<glm::vec2> possible_positions = grid->possible_moves(position);
-
-            float best_val = std::numeric_limits<float>::max();
-            glm::vec2 next_move = position;
-
-            for(glm::vec2 pos : possible_positions)
-            {
-                if(!isSameTile(pos, position - direction)
-                && (!left_spawn || grid->getTile(pos.x, pos.y) != Tile::GhostSpawnEntrance)
-                )
-                {
-                    float dist = glm::distance(pos, target);
-
-                    if(dist < best_val)
-                    {
-                        best_val = dist;
-                        next_move = pos;
-                    }
-                }
+                target = scatter_target;
             }
 
-            calc_direction(position, next_move);
+            const std::vector<glm::vec2> moves =
+                getCandidateMoves(
+                    grid,
+                    position,
+                    direction,
+                    allowSpawnGate
+                );
+
+            calc_direction(
+                position,
+                getClosestMove(moves, position, target)
+            );
         }
     }
     else if(state == State::Dead)
@@ -417,41 +489,30 @@ void Enemy::update(float timer, int level, float deltaTime)
 
         if (isSameTile(position, spawn_point))
         {
-            state = State::Chase;
+            state = activeMode;
             left_spawn = false;
             state_change = false;
             color = color::get_enemy_color(type);
             target = spawn_exit;
-            calc_direction(position, target);
+            direction = glm::vec2(0.0f, 0.0f);
+            return;
         }
-        else
+
+        if (!directionReversed)
         {
-            std::vector<glm::vec2> possible_positions = grid->possible_moves(position);
+            const std::vector<glm::vec2> moves =
+                getCandidateMoves(
+                    grid,
+                    position,
+                    direction,
+                    true
+                );
 
-            float bestDistance = std::numeric_limits<float>::max();
-            glm::vec2 next_move = position;
-
-            glm::vec2 reversePosition = position - direction;
-
-
-            for (const glm::vec2& possible_position : possible_positions)
-            {
-                if (isSameTile(possible_position, reversePosition) && possible_positions.size() > 1)
-                {
-                    continue;
-                }
-
-                float distance = glm::distance(possible_position, target);
-
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    next_move = possible_position;
-                }
-            }
-            calc_direction(position, next_move);
+            calc_direction(
+                position,
+                getClosestMove(moves, position, target)
+            );
         }
-        
     }
 
     move(deltaTime);
@@ -560,12 +621,7 @@ bool Enemy::is_at_center(glm::vec2 pos)
     return glm::length(pos - glm::round(pos)) < 0.001f;
 }
 
-bool Enemy::is_spawn_gate(glm::vec2 pos)
-{
-    return grid->getTile(pos.x, pos.y) == Tile::GhostSpawnEntrance;
-}
-
-bool Enemy::checkCollision(const Rect& playerRect)
+bool Enemy::checkCollision(const Rect& playerRect) const
 {
     return enemyRect.x < playerRect.x + playerRect.w &&
            enemyRect.x + enemyRect.w > playerRect.x &&
@@ -577,11 +633,11 @@ void Enemy::resetGhost()
 {
     set_position(get_spawn_point());
     state_change = false;
-    energizerChange = false;
     left_spawn = false;
     state = State::Scatter;
-    stateBeforeChange = State::Scatter;
+    activeMode = State::Scatter;
     scaredUntil = 0.0f;
+    scheduleTimer = 0.0f;
     color = color::get_enemy_color(type);
     direction = glm::vec2(0.0f, 0.0f);
     target = spawn_exit;
