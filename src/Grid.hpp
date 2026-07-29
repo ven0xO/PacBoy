@@ -65,13 +65,12 @@ public:
     }
 private:
     std::vector<Tile> tiles;
-    int width;
-    int height;
+    int width{0};
+    int height{0};
     int initPelletCount{0};
     int initEnergizerCount{0};
-    glm::vec2 pacmanStartPos;
+    glm::vec2 pacmanStartPos{0.0f};
     std::array<glm::vec2, 4> ghostStartPositions{};
     std::vector<glm::vec2> ghostEntrancePositions;
     std::vector<glm::vec2> ghostExitPositions;
-    std::vector<std::string> lines;
 };

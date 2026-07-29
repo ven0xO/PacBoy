@@ -162,14 +162,11 @@ void Game::nextLevel()
     {
         if(gameGrid.loadFromFile(mapPath))
         {
+            gameState.nextLevel();
             gameState.setPelletCount(gameGrid.getInitPelletCount());
             gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());
 
-            player->resetPlayer();
-            redEnemy->resetGhost();
-            pinkEnemy->resetGhost();
-            cyanEnemy->resetGhost();
-            orangeEnemy->resetGhost();
+            resetEntitiesForLoadedLevel();
 
             gameplayTimer = 0.0f;
             invulnerableUntil = 0.0f;
@@ -403,11 +400,7 @@ bool Game::startNewGame(float currentFrame)
     gameState.setPelletCount(gameGrid.getInitPelletCount());
     gameState.setEnergizerCount(gameGrid.getInitEnergizerCount());
 
-    player->resetPlayer();
-    redEnemy->resetGhost();
-    pinkEnemy->resetGhost();
-    cyanEnemy->resetGhost();
-    orangeEnemy->resetGhost();
+    resetEntitiesForLoadedLevel();
 
     gameplayTimer = 0.0f;
     readyTimer = currentFrame + 2.0f;
@@ -428,6 +421,15 @@ bool Game::startNewGame(float currentFrame)
 
     phase = GamePhase::Ready;
     return true;
+}
+
+void Game::resetEntitiesForLoadedLevel()
+{
+    player->resetPlayer(gameGrid.getPacmanStartPosition());
+    redEnemy->resetGhost(gameGrid.getRedGhostSpawnPosition());
+    pinkEnemy->resetGhost(gameGrid.getPinkGhostSpawnPosition());
+    cyanEnemy->resetGhost(gameGrid.getBlueGhostSpawnPosition());
+    orangeEnemy->resetGhost(gameGrid.getOrangeGhostSpawnPosition());
 }
 
 bool Game::resetRound(float currentFrame)

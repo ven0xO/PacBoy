@@ -54,6 +54,7 @@ public:
     void resetEnergizer() { energizer = false; }
     void killGhost();
     void resetPlayer();
+    void resetPlayer(const glm::vec2& spawnPosition);
 
 
     

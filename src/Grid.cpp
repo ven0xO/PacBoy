@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <utility>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -18,13 +19,8 @@ bool Grid::loadFromFile(const std::string& path)
         return false;
     }
 
-    lines.clear();
-    tiles.clear();
-    ghostEntrancePositions.clear();
-    ghostExitPositions.clear();
-
-    initPelletCount = 0;
-    initEnergizerCount = 0;
+    Grid parsedGrid;
+    std::vector<std::string> parsedLines;
 
     int playerSpawnCount = 0;
     std::array<int, 4> ghostSpawnCounts{};
@@ -35,30 +31,29 @@ bool Grid::loadFromFile(const std::string& path)
     while(std::getline(in, line))
     {
         if(!line.empty() && line.back() == '\r') line.pop_back();
-        lines.push_back(line);
+        parsedLines.push_back(line);
     }
-    if (lines.empty())
+    if (parsedLines.empty())
     {
         std::cerr << "Level file is empty: " << path << "\n";
         return false;
     }
 
-    height = lines.size();
-    width = lines[0].size();
+    parsedGrid.height = static_cast<int>(parsedLines.size());
     
     // Support non-rectangular level files by padding shorter rows.
     int maxWidth = 0;
-    for (const auto& l : lines) {
+    for (const auto& l : parsedLines) {
         maxWidth = std::max(maxWidth, (int)l.size());
     }
-    tiles.resize(maxWidth * height);
+    parsedGrid.tiles.resize(maxWidth * parsedGrid.height);
 
-    for(int y{}; y < height; y++)
+    for(int y{}; y < parsedGrid.height; y++)
     {
-        int rowWidth = lines[y].size();
+        int rowWidth = static_cast<int>(parsedLines[y].size());
 
         for (int x=0; x<rowWidth; ++x) {
-            char c = lines[y][x];
+            char c = parsedLines[y][x];
             Tile t = Tile::Empty;
 
             // Level map characters:
@@ -76,36 +71,42 @@ bool Grid::loadFromFile(const std::string& path)
             // ' ' - empty tile
             switch(c) {
                 case '#': t=Tile::Wall; break;
-                case '.': t=Tile::Pellet; initPelletCount++; break;
-                case '*': t=Tile::Energizer; initEnergizerCount++; break;
+                case '.':
+                    t = Tile::Pellet;
+                    parsedGrid.initPelletCount++;
+                    break;
+                case '*':
+                    t = Tile::Energizer;
+                    parsedGrid.initEnergizerCount++;
+                    break;
                 case 'P':
                     t = Tile::PacmanStart;
-                    pacmanStartPos = {x, y};
+                    parsedGrid.pacmanStartPos = {x, y};
                     playerSpawnCount++;
                     break;
                 case 'r':
                     t = Tile::GhostStart;
-                    ghostStartPositions[0] = {x, y};
+                    parsedGrid.ghostStartPositions[0] = {x, y};
                     ghostSpawnCounts[0]++;
                     break;
                 case 'p':
                     t = Tile::GhostStart;
-                    ghostStartPositions[1] = {x, y};
+                    parsedGrid.ghostStartPositions[1] = {x, y};
                     ghostSpawnCounts[1]++;
                     break;
                 case 'b':
                     t = Tile::GhostStart;
-                    ghostStartPositions[2] = {x, y};
+                    parsedGrid.ghostStartPositions[2] = {x, y};
                     ghostSpawnCounts[2]++;
                     break;
                 case 'o':
                     t = Tile::GhostStart;
-                    ghostStartPositions[3] = {x, y};
+                    parsedGrid.ghostStartPositions[3] = {x, y};
                     ghostSpawnCounts[3]++;
                     break;
                 case 'E':
                     t = Tile::GhostSpawnExit;
-                    ghostExitPositions.emplace_back(
+                    parsedGrid.ghostExitPositions.emplace_back(
                         static_cast<float>(x),
                         static_cast<float>(y)
                     );
@@ -113,7 +114,7 @@ bool Grid::loadFromFile(const std::string& path)
 
                 case 'S':
                     t = Tile::GhostSpawnEntrance;
-                    ghostEntrancePositions.emplace_back(
+                    parsedGrid.ghostEntrancePositions.emplace_back(
                         static_cast<float>(x),
                         static_cast<float>(y)
                     );
@@ -130,13 +131,13 @@ bool Grid::loadFromFile(const std::string& path)
                         << " at (" << x << ", " << y << ").\n";
                     return false;
             }
-            tiles[y*maxWidth+x] = t;
+            parsedGrid.tiles[y * maxWidth + x] = t;
         }
         for (int x = rowWidth; x < maxWidth; ++x) {
-            tiles[y*maxWidth+x] = Tile::Empty;
+            parsedGrid.tiles[y * maxWidth + x] = Tile::Empty;
         }
     }
-    width = maxWidth;
+    parsedGrid.width = maxWidth;
 
     if (playerSpawnCount != 1)
     {
@@ -160,7 +161,7 @@ bool Grid::loadFromFile(const std::string& path)
         }
     }
 
-    if (ghostEntrancePositions.empty())
+    if (parsedGrid.ghostEntrancePositions.empty())
     {
         std::cerr
             << "Level must contain at least one S marker: "
@@ -168,7 +169,10 @@ bool Grid::loadFromFile(const std::string& path)
         return false;
     }
 
-    if (ghostExitPositions.size() != ghostEntrancePositions.size())
+    if (
+        parsedGrid.ghostExitPositions.size() !=
+        parsedGrid.ghostEntrancePositions.size()
+    )
     {
         std::cerr
             << "Level must contain the same number of E and S markers: "
@@ -193,11 +197,11 @@ bool Grid::loadFromFile(const std::string& path)
         return deltaX + deltaY == 1;
     };
 
-    for (const glm::vec2& entrance : ghostEntrancePositions)
+    for (const glm::vec2& entrance : parsedGrid.ghostEntrancePositions)
     {
         const int adjacentExits = std::count_if(
-            ghostExitPositions.begin(),
-            ghostExitPositions.end(),
+            parsedGrid.ghostExitPositions.begin(),
+            parsedGrid.ghostExitPositions.end(),
             [&entrance, &areAdjacent](const glm::vec2& exit)
             {
                 return areAdjacent(entrance, exit);
@@ -213,11 +217,11 @@ bool Grid::loadFromFile(const std::string& path)
         }
     }
 
-    for (const glm::vec2& exit : ghostExitPositions)
+    for (const glm::vec2& exit : parsedGrid.ghostExitPositions)
     {
         const int adjacentEntrances = std::count_if(
-            ghostEntrancePositions.begin(),
-            ghostEntrancePositions.end(),
+            parsedGrid.ghostEntrancePositions.begin(),
+            parsedGrid.ghostEntrancePositions.end(),
             [&exit, &areAdjacent](const glm::vec2& entrance)
             {
                 return areAdjacent(exit, entrance);
@@ -248,9 +252,9 @@ bool Grid::loadFromFile(const std::string& path)
     for (const glm::ivec2& tunnel : tunnelPositions)
     {
         const bool onLeft = tunnel.x == 0;
-        const bool onRight = tunnel.x == width - 1;
+        const bool onRight = tunnel.x == parsedGrid.width - 1;
         const bool onTop = tunnel.y == 0;
-        const bool onBottom = tunnel.y == height - 1;
+        const bool onBottom = tunnel.y == parsedGrid.height - 1;
 
         const int edgeCount =
             static_cast<int>(onLeft) +
@@ -267,9 +271,9 @@ bool Grid::loadFromFile(const std::string& path)
         }
 
         const bool hasPair =
-            (onLeft && hasTunnelAt(width - 1, tunnel.y)) ||
+            (onLeft && hasTunnelAt(parsedGrid.width - 1, tunnel.y)) ||
             (onRight && hasTunnelAt(0, tunnel.y)) ||
-            (onTop && hasTunnelAt(tunnel.x, height - 1)) ||
+            (onTop && hasTunnelAt(tunnel.x, parsedGrid.height - 1)) ||
             (onBottom && hasTunnelAt(tunnel.x, 0));
 
         if (!hasPair)
@@ -281,6 +285,7 @@ bool Grid::loadFromFile(const std::string& path)
         }
     }
 
+    *this = std::move(parsedGrid);
     return true;
 }
 

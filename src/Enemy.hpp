@@ -53,6 +53,7 @@ public:
     void renderTargetBeam(Shader& shader, unsigned int cubeVAO);
     bool checkCollision(const Rect& playerRect);
     void resetGhost();
+    void resetGhost(const glm::vec2& spawnPosition);
     
 
 private:

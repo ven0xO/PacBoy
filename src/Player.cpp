@@ -211,6 +211,12 @@ void Player::resetPlayer()
     multiplier = 0;
 }
 
+void Player::resetPlayer(const glm::vec2& spawnPosition)
+{
+    initialPosition = spawnPosition;
+    resetPlayer();
+}
+
 void Player::move(float deltaTime)
 {
     constexpr float EPSILON = 0.0001f;

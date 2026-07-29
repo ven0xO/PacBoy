@@ -87,6 +87,7 @@ private:
     static constexpr bool DEV{false};
 
     void checkEnemyCollision(Enemy* enemyPtr, Player* playerPtr, const float currentFrame);
+    void resetEntitiesForLoadedLevel();
 
     bool prevKeyUp{false};
     bool prevKeyDown{false};

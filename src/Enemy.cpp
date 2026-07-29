@@ -589,3 +589,18 @@ void Enemy::resetGhost()
     enemyRect.y = position.y - HITBOX_SIZE / 2.0f;
     scheduleIndex = 0;
 }
+
+void Enemy::resetGhost(const glm::vec2& spawnPosition)
+{
+    spawn_point = spawnPosition;
+    spawn_entrance = findClosestPosition(
+        grid->getGhostEntryPositions(),
+        spawn_point
+    );
+    spawn_exit = findClosestPosition(
+        grid->getGhostExitPositions(),
+        spawn_entrance
+    );
+    assign_scatter();
+    resetGhost();
+}
