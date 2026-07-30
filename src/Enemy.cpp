@@ -6,9 +6,6 @@
 #include <array>
 #include <cmath>
 #include <vector>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include "../external/shader_s.h"
 
 namespace color
 {
@@ -570,50 +567,6 @@ void Enemy::move(float deltaTime)
 
     enemyRect.x = position.x - HITBOX_SIZE / 2.0f;
     enemyRect.y = position.y - HITBOX_SIZE / 2.0f;
-}
-
-void Enemy::render(Shader& shader, unsigned int cubeVAO)
-{
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(position.x, 0.1f, position.y));
-    model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
-
-    int modelLoc = glGetUniformLocation(shader.ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-    int objectColorLoc = glGetUniformLocation(shader.ID, "objectColor");
-    glUniform3f(objectColorLoc, color.r, color.g, color.b);
-
-    glBindVertexArray(cubeVAO);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-}
-
-void Enemy::renderTargetBeam(Shader& shader, unsigned int cubeVAO)
-{
-    glm::vec2 beam = target - position;
-    float beam_length = glm::length(beam);
-
-    if (beam_length < 0.001f)
-    {
-        return;
-    }
-
-    glm::vec2 beam_center = position + beam * 0.5f;
-    float beam_angle = -std::atan2(beam.y, beam.x);
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(beam_center.x, 0.65f, beam_center.y));
-    model = glm::rotate(model, beam_angle, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(beam_length, 0.06f, 0.06f));
-
-    int modelLoc = glGetUniformLocation(shader.ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-    int objectColorLoc = glGetUniformLocation(shader.ID, "objectColor");
-    glUniform3f(objectColorLoc, color.r, color.g, color.b);
-
-    glBindVertexArray(cubeVAO);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 
 bool Enemy::is_at_center(glm::vec2 pos)

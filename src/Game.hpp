@@ -4,7 +4,6 @@
 #include "Player.hpp"
 #include "Enemy.hpp"
 #include "GameState.hpp"
-#include "Hud.hpp"
 #include "Rect.hpp"
 #include "Scoreboard.hpp"
 
@@ -15,7 +14,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 //...
-struct GLFWwindow;
+
+#include "GameInput.hpp"
 
 enum class GamePhase
 {
@@ -46,27 +46,40 @@ enum class PauseMenuOption
 class Game
 {
 public:
-    Game(
-        const std::vector<std::string>& level_paths,
-        int screen_width,
-        int screen_height
-    );
+    Game(const std::vector<std::string>& level_paths);
+
     Player* getPlayerPtr() const { return player.get(); }
     Grid* getGridPtr() { return &gameGrid; }
     bool isInitialized() const { return initialized; }
 
     void update(float currentFrame, float deltaTime);
-    void render(Shader& shader, unsigned int cubeVAO);
     void nextLevel(float currentFrame);
-    void processPlayerInput(GLFWwindow* window, const float currentFrame);
+    void processPlayerInput(const GameInput& input, float currentFrame);
     bool startNewGame(float currentFrame);
     bool resetRound(float currentFrame);
+
+    const Grid& getGrid() const { return gameGrid; }
+    const Player& getPlayer() const { return *player; }
+    std::array<const Enemy*, 4> getEnemies() const {
+        return {
+            redEnemy.get(),
+            pinkEnemy.get(),
+            cyanEnemy.get(),
+            orangeEnemy.get()
+        };
+    }
+    const GameState& getGameState() const { return gameState; }
+    GamePhase getPhase() const { return phase; }
+    MainMenuOption getSelectedMenuOption() const { return selectedMenuOption; }
+    PauseMenuOption getSelectedPauseMenuOption() const { return selectedPauseMenuOption; }
+    const Scoreboard& getScoreboard() const { return scoreboard; }
+    const std::string& getEnteredName() const { return enteredName; }
+
 
 private:
     Grid gameGrid;
     GameState gameState;
     std::unique_ptr<Player> player;
-    Hud hud;
     Scoreboard scoreboard{"./assets/scores/scores.json"};
     GamePhase phase{GamePhase::MainMenu};
 
@@ -91,8 +104,6 @@ private:
     std::size_t currentLevelIndex{0};
     std::string enteredName;
     bool initialized{false};
-
-    static constexpr bool DEV{false};
 
     void handleEnemyCollisions(float currentFrame);
     bool loadNextLevel(float currentFrame);

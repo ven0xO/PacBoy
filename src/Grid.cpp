@@ -5,10 +5,6 @@
 #include <cmath>
 #include <utility>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include "../external/GLAD/include/glad/glad.h"
-#include "../external/shader_s.h"
 
 bool Grid::loadFromFile(const std::string& path)
 {
@@ -348,50 +344,6 @@ glm::vec2 Grid::getPacmanStartPosition() const
 void Grid::collectTile(int x, int y) {
     if (x >= 0 && x < width && y >= 0 && y < height) {
         tiles[y * width + x] = Tile::Empty;
-    }
-}
-
-void Grid::render(Shader& shader, unsigned int cubeVAO)
-{
-    for(int y{}; y < height; y++)
-    {
-        for(int x = 0; x < width; x++)
-        {
-            Tile tile = getTile(x,y);
-            if (tile == Tile::Empty ||
-                tile == Tile::Tunnel ||
-                tile == Tile::GhostStart ||
-                tile == Tile::GhostSpawnExit ||
-                tile == Tile::PacmanStart)
-            {
-                continue;
-            }
-
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(x, 0.0f, y));
-
-            int modelLoc = glGetUniformLocation(shader.ID, "model");
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-            int objectColorLoc = glGetUniformLocation(shader.ID, "objectColor");
-            switch (tile) {
-                case Tile::Wall:
-                    glUniform3f(objectColorLoc, 0.0f, 0.0f, 1.0f); // blue
-                    break;
-                case Tile::Pellet:
-                    glUniform3f(objectColorLoc, 1.0f, 1.0f, 0.0f); // yellow
-                    break;
-                case Tile::Energizer:
-                    glUniform3f(objectColorLoc, 1.0f, 0.0f, 1.0f); // purple
-                    break;
-                case Tile::GhostSpawnEntrance:
-                    glUniform3f(objectColorLoc, 1.0f, 0.0f, 0.0f); // red
-                    break;
-            }
-            
-            glBindVertexArray(cubeVAO);
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        }
     }
 }
 

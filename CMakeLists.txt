@@ -36,6 +36,8 @@ set(SOURCES
     src/PixelFont.cpp
     src/Game.cpp
     src/Scoreboard.cpp
+    src/GameRenderer.cpp
+    src/GlfwInput.cpp
 )
 
 # headers

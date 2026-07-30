@@ -4,7 +4,6 @@
 #include "GameState.hpp"
 
 class Grid;
-class Shader;
 
 // Movement commands are relative to the camera direction.
 enum class Direction
@@ -42,6 +41,7 @@ public:
         HITBOX_SIZE
         };
     }
+    const glm::vec3& getColor() const { return color; }
     bool getCollided() const { return collided; }
     bool getEnergizer() const { return energizer; }
     void setPosition(float x, float y);
@@ -49,7 +49,6 @@ public:
     void setDirection(Direction direct, bool updateCamera = false);
     void setEnergizerTrue() { energizer = true; multiplier = 0; }
 
-    void render(Shader& shader, unsigned int cubeVAO);
     void setCollided(bool collidedValue);
     void resetEnergizer() { energizer = false; }
     void killGhost();

@@ -11,6 +11,8 @@
 #include "Game.hpp"
 #include <cmath>
 #include <algorithm>
+#include "GameRenderer.hpp"
+#include "GlfwInput.hpp"
 
 // GLFW callbacks and input handling.
 void processInput(GLFWwindow* window);
@@ -105,12 +107,15 @@ int main()
     }
 
 
-    Game game(
-        {"./assets/levels/classic_inspired.txt"},
-        SCR_WIDTH,
-        SCR_HEIGHT
-    );
+    Game game({"./assets/levels/classic_inspired.txt"});
     if (!game.isInitialized())
+    {
+        glfwTerminate();
+        return -1;
+    }
+
+    GameRenderer gameRenderer(SCR_WIDTH, SCR_HEIGHT);
+    if (!gameRenderer.isValid())
     {
         glfwTerminate();
         return -1;
@@ -157,7 +162,7 @@ int main()
         lastFrame = currentFrame;
         
         processInput(window);
-        game.processPlayerInput(window, currentFrame);
+        game.processPlayerInput(readGameInput(window), currentFrame);
         // Smoothly follow behind the player based on the current movement direction.
         glm::vec3 playerPos = glm::vec3(game.getPlayerPtr()->getPosition().x, 0.0f, game.getPlayerPtr()->getPosition().y);
         glm::vec2 playerDir = game.getPlayerPtr()->getCameraDirection();
@@ -191,7 +196,7 @@ int main()
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
         game.update(currentFrame, deltaTime);
-        game.render(ourShader, VAO);
+        gameRenderer.render(game, ourShader, VAO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

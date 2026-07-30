@@ -1,5 +1,4 @@
 #include "Game.hpp"
-#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <iostream>
 
@@ -10,20 +9,11 @@ namespace
     constexpr float HIT_INVULNERABILITY_DURATION{1.5f};
 }
 
-Game::Game(
-    const std::vector<std::string>& level_paths,
-    int screen_width,
-    int screen_height
-)
-            : hud(screen_width, screen_height),
-            levelPaths(level_paths)
+Game::Game(const std::vector<std::string>& level_paths) : levelPaths(level_paths)
 {
-    if (!hud.isValid() || levelPaths.empty())
+    if (levelPaths.empty())
     {
-        if (levelPaths.empty())
-        {
-            std::cerr << "No level files configured.\n";
-        }
+        std::cerr << "No level files configured.\n";
         return;
     }
 
@@ -113,67 +103,6 @@ void Game::update(float currentFrame, float deltaTime)
     handleEnemyCollisions(currentFrame);
 }
 
-void Game::render(Shader& shader, unsigned int cubeVAO)
-{
-
-    if (phase == GamePhase::MainMenu)
-    {
-        glDisable(GL_DEPTH_TEST);
-        hud.renderMainMenu(static_cast<int>(selectedMenuOption));
-        glEnable(GL_DEPTH_TEST);
-        return;
-    }
-
-    if (phase == GamePhase::Scoreboard)
-    {
-        glDisable(GL_DEPTH_TEST);
-        hud.renderScoreboard(scoreboard);
-        glEnable(GL_DEPTH_TEST);
-        return;
-    }
-
-    gameGrid.render(shader, cubeVAO);
-    player->render(shader, cubeVAO);
-
-    if(DEV)
-    {
-        redEnemy->renderTargetBeam(shader, cubeVAO);
-        pinkEnemy->renderTargetBeam(shader, cubeVAO);
-        cyanEnemy->renderTargetBeam(shader, cubeVAO);
-        orangeEnemy->renderTargetBeam(shader, cubeVAO);
-    }
-
-    redEnemy->render(shader, cubeVAO);
-    pinkEnemy->render(shader, cubeVAO);
-    cyanEnemy->render(shader, cubeVAO);
-    orangeEnemy->render(shader, cubeVAO);
-
-    glDisable(GL_DEPTH_TEST);
-    hud.render(gameState);
-    if(phase == GamePhase::Ready)
-    {
-        hud.renderReady();
-    }
-    else if(phase == GamePhase::Paused)
-    {
-        hud.renderPause(static_cast<int>(selectedPauseMenuOption));
-    }
-    else if(phase == GamePhase::LevelComplete)
-    {
-        hud.renderLevelComplete(gameState);
-    }
-    else if(phase == GamePhase::GameOver)
-    {
-        hud.renderGameOver(gameState);
-    }
-    else if(phase == GamePhase::NewScore)
-    {
-        int score = gameState.getScore();
-        hud.renderHighScore(enteredName, score, scoreboard.getHighScore() < score);
-    }
-    glEnable(GL_DEPTH_TEST);
-}
-
 void Game::nextLevel(float currentFrame)
 {
     if (
@@ -250,19 +179,18 @@ void Game::handleEnemyCollisions(float currentFrame)
     }
 }
 
-void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
+void Game::processPlayerInput(const GameInput& input, float currentFrame)
 {
-    //if(phase != GamePhase::Playing) return;
-    const bool updateCamera = phase == GamePhase::Ready;
+    const bool updateCamera =
+        phase == GamePhase::Ready;
 
-    bool keyUp = glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
-    bool keyDown = glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
-    bool keyLeft = glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
-    bool keyRight = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
-    bool keyEnter = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
-    bool keyBackspace =
-        glfwGetKey(window, GLFW_KEY_BACKSPACE) == GLFW_PRESS;
-    bool keyP = glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS;
+    const bool keyUp = input.up;
+    const bool keyDown = input.down;
+    const bool keyLeft = input.left;
+    const bool keyRight = input.right;
+    const bool keyEnter = input.enter;
+    const bool keyBackspace = input.backspace;
+    const bool keyP = input.pause;
 
     if(keyP && !prevKeyP)
     {
@@ -391,23 +319,13 @@ void Game::processPlayerInput(GLFWwindow* window, const float currentFrame)
     {
         constexpr std::size_t maxNameLength{10};
 
-        for (int key = GLFW_KEY_A; key <= GLFW_KEY_Z; key++)
+        for (std::size_t index = 0; index < input.letters.size(); ++index)
         {
-            const std::size_t index =
-                static_cast<std::size_t>(key - GLFW_KEY_A);
+            const bool keyPressed = input.letters[index];
 
-            const bool keyPressed =
-                glfwGetKey(window, key) == GLFW_PRESS;
-
-            if (
-                keyPressed &&
-                !prevLetterKeys[index] &&
-                enteredName.size() < maxNameLength
-            )
+            if (keyPressed && !prevLetterKeys[index] && enteredName.size() < maxNameLength)
             {
-                enteredName.push_back(
-                    static_cast<char>('A' + index)
-                );
+                enteredName.push_back(static_cast<char>('A' + static_cast<int>(index)));
             }
 
             prevLetterKeys[index] = keyPressed;

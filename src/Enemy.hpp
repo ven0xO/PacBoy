@@ -6,7 +6,6 @@
 #include <cstddef>
 
 class Player;
-class Shader;
 
 enum class State
 {
@@ -35,6 +34,8 @@ public:
     glm::vec2 get_position() const {return position;}
     glm::vec2 get_spawn_point() const {return spawn_point;}
     State get_state() const {return state;}
+    const glm::vec3& getColor() const { return color; }
+    const glm::vec2& getTarget() const { return target; }
 
     void set_red_ghost(Enemy* red_ghost_v);
     void set_grid(Grid* grid_v);
@@ -50,8 +51,6 @@ public:
     void update(float timer, int level, float deltaTime);
     void move(float deltaTime);
     void calc_direction(glm::vec2 curr, glm::vec2 dest);
-    void render(Shader& shader, unsigned int cubeVAO);
-    void renderTargetBeam(Shader& shader, unsigned int cubeVAO);
     bool checkCollision(const Rect& playerRect) const;
     void resetGhost();
     void resetGhost(const glm::vec2& spawnPosition);

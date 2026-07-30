@@ -4,8 +4,6 @@
 #include <array>
 #include<glm/glm.hpp>
 
-// Forward declaration
-class Shader;
 
 enum class Tile {
     Empty,
@@ -24,7 +22,6 @@ class Grid
 public:
     bool loadFromFile(const std::string& path);
     Tile getTile(int x, int y) const;
-    void render(Shader& shader, unsigned int cubeVAO);
     void collectTile(int x, int y);
     int getWidth() const;
     int getHeight() const;
@@ -34,35 +31,12 @@ public:
     std::vector<glm::vec2> possible_moves(glm::vec2 position);
     glm::vec2 wrapPosition(glm::vec2 position) const;
 
-    glm::vec2 getRedGhostSpawnPosition() const
-    {
-        return ghostStartPositions[0];
-    }
-
-    glm::vec2 getPinkGhostSpawnPosition() const
-    {
-        return ghostStartPositions[1];
-    }
-
-    glm::vec2 getBlueGhostSpawnPosition() const
-    {
-        return ghostStartPositions[2];
-    }
-
-    glm::vec2 getOrangeGhostSpawnPosition() const
-    {
-        return ghostStartPositions[3];
-    }
-
-    const std::vector<glm::vec2>& getGhostEntryPositions() const
-    {
-        return ghostEntrancePositions;
-    }
-
-    const std::vector<glm::vec2>& getGhostExitPositions() const
-    {
-        return ghostExitPositions;
-    }
+    glm::vec2 getRedGhostSpawnPosition() const { return ghostStartPositions[0]; }
+    glm::vec2 getPinkGhostSpawnPosition() const { return ghostStartPositions[1]; }
+    glm::vec2 getBlueGhostSpawnPosition() const { return ghostStartPositions[2]; }
+    glm::vec2 getOrangeGhostSpawnPosition() const { return ghostStartPositions[3]; }
+    const std::vector<glm::vec2>& getGhostEntryPositions() const { return ghostEntrancePositions; }
+    const std::vector<glm::vec2>& getGhostExitPositions() const { return ghostExitPositions; }
 private:
     std::vector<Tile> tiles;
     int width{0};

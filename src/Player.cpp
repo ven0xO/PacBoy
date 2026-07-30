@@ -1,9 +1,6 @@
 #include "Player.hpp"
 #include "Grid.hpp"
-#include "../external/shader_s.h"
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <cmath>
 
 
@@ -163,22 +160,6 @@ void Player::setPosition(const glm::vec2& pos)
 {
     position = pos;
     visual_position = pos;
-}
-
-void Player::render(Shader& shader, unsigned int cubeVAO)
-{
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(visual_position.x, 0.1f, visual_position.y));
-    model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
-    
-    int modelLoc = glGetUniformLocation(shader.ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    
-    int objectColorLoc = glGetUniformLocation(shader.ID, "objectColor");
-    glUniform3f(objectColorLoc, color.r, color.g, color.b);
-    
-    glBindVertexArray(cubeVAO);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 
 void Player::setCollided(bool collidedValue)
