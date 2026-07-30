@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and test (${{ matrix.compiler }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: GCC
+            cc: gcc
+            cxx: g++
+          - compiler: Clang
+            cc: clang
+            cxx: clang++
+
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential \
+            clang \
+            cmake \
+            libgl1-mesa-dev \
+            libglfw3-dev \
+            libglm-dev
+
+      - name: Configure
+        run: cmake --preset test
+
+      - name: Build
+        run: cmake --build --preset test --parallel 2
+
+      - name: Run tests
+        run: ctest --preset test
+
+  format:
+    name: Clang-Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Clang-Format
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes clang-format
+
+      - name: Check formatting
+        run: clang-format --dry-run --Werror src/*.cpp src/*.hpp tests/*.cpp
+
+  static-analysis:
+    name: Clang-Tidy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CC: clang
+      CXX: clang++
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential \
+            clang \
+            clang-tidy \
+            cmake \
+            libgl1-mesa-dev \
+            libglfw3-dev \
+            libglm-dev
+
+      - name: Configure
+        run: cmake --preset tidy
+
+      - name: Run Clang-Tidy
+        run: cmake --build --preset tidy --parallel 2
+
+  sanitizers:
+    name: AddressSanitizer and UndefinedBehaviorSanitizer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CC: clang
+      CXX: clang++
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential \
+            clang \
+            cmake \
+            libgl1-mesa-dev \
+            libglfw3-dev \
+            libglm-dev
+
+      - name: Configure
+        run: cmake --preset sanitizers
+
+      - name: Build
+        run: cmake --build --preset sanitizers --parallel 2
+
+      - name: Run tests
+        run: ctest --preset sanitizers
