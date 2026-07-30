@@ -2,7 +2,6 @@
 #include <glm/glm.hpp>
 #include "Grid.hpp"
 #include "Rect.hpp"
-#include "GameState.hpp"
 #include <cstddef>
 
 class Player;
@@ -27,7 +26,7 @@ class Enemy
 {
 public:
 
-    Enemy(Type enemy_type, Grid* grid_in, Player* player_in, glm::vec2 start_pos, GameState* gmState); 
+    Enemy(Type enemy_type, Grid* grid_in, Player* player_in, glm::vec2 start_pos);
 
     glm::vec2 find_target();
 
@@ -72,6 +71,12 @@ private:
     Rect enemyRect;
 
     bool is_at_center(glm::vec2 pos);
+    void updateState(float timer, int level, float deltaTime);
+    bool reverseDirectionIfNeeded(bool allowSpawnGate);
+    bool chooseNextDirection(
+        bool allowSpawnGate,
+        bool directionReversed
+    );
 
     bool state_change = false;
     float scaredUntil {0};

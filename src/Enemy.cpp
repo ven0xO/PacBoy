@@ -7,41 +7,55 @@
 #include <cmath>
 #include <vector>
 
-namespace color
-{
-    const glm::vec3 red_color = glm::vec3(1.0f, 0.0f, 0.0f);
-    const glm::vec3 cyan_color = glm::vec3(0.0f, 1.0f, 1.0f);
-    const glm::vec3 pink_color = glm::vec3(1.0f, 0.4f, 0.7f);
-    const glm::vec3 orange_color = glm::vec3(1.0f, 0.5f, 0.0f);
-    const glm::vec3 blue_color = glm::vec3(0.0f, 0.2f, 1.0f);
-
-    glm::vec3 get_enemy_color(Type type)
-    {
-        switch (type)
-        {
-        case Type::Red:
-            return red_color;
-        case Type::Pink:
-            return pink_color;
-        case Type::Blue:
-            return cyan_color;
-        case Type::Orange:
-            return orange_color;
-        }
-
-        return red_color;
-    }
-}
-
 namespace
 {
-    constexpr float SCARED_DURATION{6.0f};
-    constexpr std::array<float, 4> GHOST_RELEASE_DELAYS{
-        0.0f,
-        2.0f,
-        5.0f,
-        8.0f
+    struct EnemyConfig
+    {
+        glm::vec3 normalColor;
+        float releaseDelay;
+        glm::vec2 scatterCorner;
     };
+
+    const std::array<EnemyConfig, 4> ENEMY_CONFIGS{{
+        {
+            glm::vec3(1.0f, 0.0f, 0.0f),
+            0.0f,
+            glm::vec2(1.0f, 0.0f)
+        },
+        {
+            glm::vec3(1.0f, 0.4f, 0.7f),
+            2.0f,
+            glm::vec2(0.0f, 0.0f)
+        },
+        {
+            glm::vec3(0.0f, 1.0f, 1.0f),
+            5.0f,
+            glm::vec2(1.0f, 1.0f)
+        },
+        {
+            glm::vec3(1.0f, 0.5f, 0.0f),
+            8.0f,
+            glm::vec2(0.0f, 1.0f)
+        }
+    }};
+
+    const glm::vec3 SCARED_COLOR{
+        0.0f,
+        0.2f,
+        1.0f
+    };
+
+    constexpr float SCARED_DURATION{6.0f};
+    constexpr float PINK_LOOKAHEAD_TILES{3.0f};
+    constexpr float BLUE_LOOKAHEAD_TILES{2.0f};
+    constexpr float ORANGE_SCATTER_DISTANCE{8.0f};
+    constexpr float CENTER_TOLERANCE{0.001f};
+    constexpr float MOVEMENT_EPSILON{0.0001f};
+
+    const EnemyConfig& getEnemyConfig(Type type)
+    {
+        return ENEMY_CONFIGS[static_cast<std::size_t>(type)];
+    }
 
     struct ModeTransition
     {
@@ -217,9 +231,9 @@ namespace
     }
 }
 
-Enemy::Enemy(Type enemy_type, Grid* grid_in, Player* player_in, glm::vec2 start_pos, GameState* gmState) : 
+Enemy::Enemy(Type enemy_type, Grid* grid_in, Player* player_in, glm::vec2 start_pos) :
 type(enemy_type), 
-color(color::get_enemy_color(enemy_type)),
+color(getEnemyConfig(enemy_type).normalColor),
 grid(grid_in),
 player(player_in),
 target(start_pos),
@@ -239,8 +253,7 @@ enemyRect{start_pos.x - HITBOX_SIZE / 2.0f, start_pos.y - HITBOX_SIZE / 2.0f, HI
     target = spawn_exit;
 
     assign_scatter();
-    releaseDelay =
-        GHOST_RELEASE_DELAYS[static_cast<std::size_t>(type)];
+    releaseDelay = getEnemyConfig(type).releaseDelay;
 }
 
 void Enemy::set_red_ghost(Enemy* red_ghost_v)
@@ -265,28 +278,13 @@ void Enemy::calc_direction(glm::vec2 curr, glm::vec2 dest)
 
 void Enemy::assign_scatter()
 {
-    switch (type)
-    {
-    case Type::Red:
-        
-        scatter_target = glm::vec2(grid->getWidth(), 0.0f);
-        break;
-    case Type::Pink:
-        
-        scatter_target = glm::vec2(0.0f, 0.0f);
-        break;
-    case Type::Orange:
-        
-        scatter_target = glm::vec2(0.0f, grid->getHeight());
-        break;
-    case Type::Blue:
-        
-        scatter_target = glm::vec2(grid->getWidth(), grid->getHeight());
-        break;
-    
-    default:
-        break;
-    }
+    const glm::vec2 corner =
+        getEnemyConfig(type).scatterCorner;
+
+    scatter_target = glm::vec2(
+        corner.x * static_cast<float>(grid->getWidth()),
+        corner.y * static_cast<float>(grid->getHeight())
+    );
 }
 
 glm::vec2 Enemy::find_target()
@@ -300,12 +298,18 @@ glm::vec2 Enemy::find_target()
     }
     else if(type == Type::Pink)
     {
-        target = player_position + 3.0f * player->getCurrentDirection();
+        target =
+            player_position +
+            PINK_LOOKAHEAD_TILES *
+                player->getCurrentDirection();
         return target;
     }
     else if(type == Type::Orange)
     {
-        if(glm::distance(player_position, position) <= 8)
+        if (
+            glm::distance(player_position, position) <=
+            ORANGE_SCATTER_DISTANCE
+        )
         {
             target = scatter_target;
         }
@@ -313,7 +317,10 @@ glm::vec2 Enemy::find_target()
     }
     else if(type == Type::Blue)
     {
-        glm::vec2 two_spaces = player_position + 2.0f * player->getCurrentDirection();
+        glm::vec2 two_spaces =
+            player_position +
+            BLUE_LOOKAHEAD_TILES *
+                player->getCurrentDirection();
         target = 2.0f * two_spaces - red_ghost->get_position();
     }
 
@@ -331,16 +338,20 @@ void Enemy::enterScared(float timer)
 
     state = State::Scared;
     state_change = true;
-    color = color::blue_color;
+    color = SCARED_COLOR;
 }
 
-void Enemy::update(float timer, int level, float deltaTime)
+void Enemy::updateState(
+    float timer,
+    int level,
+    float deltaTime
+)
 {
     const bool scaredPeriodActive = timer < scaredUntil;
 
     if (state == State::Scared && !scaredPeriodActive)
     {
-        color = color::get_enemy_color(type);
+        color = getEnemyConfig(type).normalColor;
         state = activeMode;
     }
 
@@ -368,54 +379,48 @@ void Enemy::update(float timer, int level, float deltaTime)
             ++scheduleIndex;
         }
     }
+}
 
-    if (!left_spawn && timer < releaseDelay)
+bool Enemy::reverseDirectionIfNeeded(bool allowSpawnGate)
+{
+    if (!state_change)
     {
-        direction = glm::vec2(0.0f, 0.0f);
-        return;
-    }
-    
-    if (!is_at_center(position))
-    {
-        move(deltaTime);
-        return;
-    }
-    position = glm::round(position);
-
-    if (!left_spawn && isSameTile(position, spawn_exit))
-    {
-        left_spawn = true;
+        return false;
     }
 
-    const bool allowSpawnGate =
-        !left_spawn || state == State::Dead;
+    state_change = false;
 
-    bool directionReversed = false;
-
-    if (state_change)
+    if (glm::length(direction) == 0.0f)
     {
-        state_change = false;
-
-        if (glm::length(direction) > 0.0f)
-        {
-            const glm::vec2 reversePosition =
-                position - direction;
-
-            const Tile reverseTile =
-                grid->getTile(reversePosition.x, reversePosition.y);
-
-            if (
-                reverseTile != Tile::Wall &&
-                (allowSpawnGate ||
-                 reverseTile != Tile::GhostSpawnEntrance)
-            )
-            {
-                direction *= -1.0f;
-                directionReversed = true;
-            }
-        }
+        return false;
     }
 
+    const glm::vec2 reversePosition =
+        position - direction;
+
+    const Tile reverseTile =
+        grid->getTile(reversePosition.x, reversePosition.y);
+
+    if (
+        reverseTile == Tile::Wall ||
+        (
+            !allowSpawnGate &&
+            reverseTile == Tile::GhostSpawnEntrance
+        )
+    )
+    {
+        return false;
+    }
+
+    direction *= -1.0f;
+    return true;
+}
+
+bool Enemy::chooseNextDirection(
+    bool allowSpawnGate,
+    bool directionReversed
+)
+{
     // Direction changes are made only at tile centers to keep grid movement stable.
     if(state == State::Scared)
     {
@@ -489,10 +494,10 @@ void Enemy::update(float timer, int level, float deltaTime)
             state = activeMode;
             left_spawn = false;
             state_change = false;
-            color = color::get_enemy_color(type);
+            color = getEnemyConfig(type).normalColor;
             target = spawn_exit;
             direction = glm::vec2(0.0f, 0.0f);
-            return;
+            return false;
         }
 
         if (!directionReversed)
@@ -512,19 +517,52 @@ void Enemy::update(float timer, int level, float deltaTime)
         }
     }
 
-    move(deltaTime);
+    return true;
+}
+
+void Enemy::update(float timer, int level, float deltaTime)
+{
+    updateState(timer, level, deltaTime);
+
+    if (!left_spawn && timer < releaseDelay)
+    {
+        direction = glm::vec2(0.0f, 0.0f);
+        return;
+    }
+
+    if (!is_at_center(position))
+    {
+        move(deltaTime);
+        return;
+    }
+    position = glm::round(position);
+
+    if (!left_spawn && isSameTile(position, spawn_exit))
+    {
+        left_spawn = true;
+    }
+
+    const bool allowSpawnGate =
+        !left_spawn || state == State::Dead;
+
+    const bool directionReversed =
+        reverseDirectionIfNeeded(allowSpawnGate);
+
+    if (chooseNextDirection(allowSpawnGate, directionReversed))
+    {
+        move(deltaTime);
+    }
 }
 
 void Enemy::move(float deltaTime)
 {
-    constexpr float EPSILON = 0.0001f;
-
     float movement = SPEED * deltaTime;
     glm::vec2 nextPosition = position + direction * movement;
 
     if (direction.x > 0.0f)
     {
-        float nextCenter = std::floor(position.x + EPSILON) + 1.0f;
+        float nextCenter =
+            std::floor(position.x + MOVEMENT_EPSILON) + 1.0f;
 
         if (nextPosition.x >= nextCenter)
         {
@@ -534,7 +572,8 @@ void Enemy::move(float deltaTime)
     }
     else if (direction.x < 0.0f)
     {
-        float nextCenter = std::ceil(position.x - EPSILON) - 1.0f;
+        float nextCenter =
+            std::ceil(position.x - MOVEMENT_EPSILON) - 1.0f;
 
         if (nextPosition.x <= nextCenter)
         {
@@ -544,7 +583,8 @@ void Enemy::move(float deltaTime)
     }
     else if (direction.y > 0.0f)
     {
-        float nextCenter = std::floor(position.y + EPSILON) + 1.0f;
+        float nextCenter =
+            std::floor(position.y + MOVEMENT_EPSILON) + 1.0f;
 
         if (nextPosition.y >= nextCenter)
         {
@@ -554,7 +594,8 @@ void Enemy::move(float deltaTime)
     }
     else if (direction.y < 0.0f)
     {
-        float nextCenter = std::ceil(position.y - EPSILON) - 1.0f;
+        float nextCenter =
+            std::ceil(position.y - MOVEMENT_EPSILON) - 1.0f;
 
         if (nextPosition.y <= nextCenter)
         {
@@ -571,7 +612,9 @@ void Enemy::move(float deltaTime)
 
 bool Enemy::is_at_center(glm::vec2 pos)
 {
-    return glm::length(pos - glm::round(pos)) < 0.001f;
+    return
+        glm::length(pos - glm::round(pos)) <
+        CENTER_TOLERANCE;
 }
 
 bool Enemy::checkCollision(const Rect& playerRect) const
@@ -591,7 +634,7 @@ void Enemy::resetGhost()
     activeMode = State::Scatter;
     scaredUntil = 0.0f;
     scheduleTimer = 0.0f;
-    color = color::get_enemy_color(type);
+    color = getEnemyConfig(type).normalColor;
     direction = glm::vec2(0.0f, 0.0f);
     target = spawn_exit;
     enemyRect.x = position.x - HITBOX_SIZE / 2.0f;

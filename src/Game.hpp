@@ -48,7 +48,6 @@ class Game
 public:
     Game(const std::vector<std::string>& level_paths);
 
-    Player* getPlayerPtr() const { return player.get(); }
     Grid* getGridPtr() { return &gameGrid; }
     bool isInitialized() const { return initialized; }
 
@@ -62,10 +61,10 @@ public:
     const Player& getPlayer() const { return *player; }
     std::array<const Enemy*, 4> getEnemies() const {
         return {
-            redEnemy.get(),
-            pinkEnemy.get(),
-            cyanEnemy.get(),
-            orangeEnemy.get()
+            enemies[0].get(),
+            enemies[1].get(),
+            enemies[2].get(),
+            enemies[3].get()
         };
     }
     const GameState& getGameState() const { return gameState; }
@@ -91,10 +90,7 @@ private:
         PauseMenuOption::Resume
     };
 
-    std::unique_ptr<Enemy> redEnemy;
-    std::unique_ptr<Enemy> pinkEnemy;
-    std::unique_ptr<Enemy> cyanEnemy;
-    std::unique_ptr<Enemy> orangeEnemy;
+    std::array<std::unique_ptr<Enemy>, 4> enemies;
 
     float invulnerableUntil{0.0f};
     float readyTimer{0.0f};

@@ -7,6 +7,25 @@ namespace
     constexpr float READY_DURATION{2.0f};
     constexpr float LEVEL_COMPLETE_DURATION{2.5f};
     constexpr float HIT_INVULNERABILITY_DURATION{1.5f};
+
+    constexpr std::array<Type, 4> ENEMY_TYPES{
+        Type::Red,
+        Type::Pink,
+        Type::Blue,
+        Type::Orange
+    };
+
+    std::array<glm::vec2, 4> getEnemySpawnPositions(
+        const Grid& grid
+    )
+    {
+        return {
+            grid.getRedGhostSpawnPosition(),
+            grid.getPinkGhostSpawnPosition(),
+            grid.getBlueGhostSpawnPosition(),
+            grid.getOrangeGhostSpawnPosition()
+        };
+    }
 }
 
 Game::Game(const std::vector<std::string>& level_paths) : levelPaths(level_paths)
@@ -32,38 +51,23 @@ Game::Game(const std::vector<std::string>& level_paths) : levelPaths(level_paths
         &gameState
     );
 
-    redEnemy = std::make_unique<Enemy>(
-        Type::Red,
-        &gameGrid,
-        player.get(),
-        gameGrid.getRedGhostSpawnPosition(),
-        &gameState
-    );
-    pinkEnemy = std::make_unique<Enemy>(
-        Type::Pink,
-        &gameGrid,
-        player.get(),
-        gameGrid.getPinkGhostSpawnPosition(),
-        &gameState
-    );
-    cyanEnemy = std::make_unique<Enemy>(
-        Type::Blue,
-        &gameGrid,
-        player.get(),
-        gameGrid.getBlueGhostSpawnPosition(),
-        &gameState
-    );
-    orangeEnemy = std::make_unique<Enemy>(
-        Type::Orange,
-        &gameGrid,
-        player.get(),
-        gameGrid.getOrangeGhostSpawnPosition(),
-        &gameState
-    );
+    const auto spawnPositions =
+        getEnemySpawnPositions(gameGrid);
 
-    pinkEnemy->set_red_ghost(redEnemy.get());
-    cyanEnemy->set_red_ghost(redEnemy.get());
-    orangeEnemy->set_red_ghost(redEnemy.get());
+    for (std::size_t index = 0; index < enemies.size(); ++index)
+    {
+        enemies[index] = std::make_unique<Enemy>(
+            ENEMY_TYPES[index],
+            &gameGrid,
+            player.get(),
+            spawnPositions[index]
+        );
+    }
+
+    for (std::size_t index = 1; index < enemies.size(); ++index)
+    {
+        enemies[index]->set_red_ghost(enemies[0].get());
+    }
 
     initialized = true;
 }
@@ -86,19 +90,20 @@ void Game::update(float currentFrame, float deltaTime)
 
     if (player->getEnergizer())
     {
-        redEnemy->enterScared(gameplayTimer);
-        pinkEnemy->enterScared(gameplayTimer);
-        cyanEnemy->enterScared(gameplayTimer);
-        orangeEnemy->enterScared(gameplayTimer);
+        for (const auto& enemy : enemies)
+        {
+            enemy->enterScared(gameplayTimer);
+        }
+
         player->resetEnergizer();
     }
     
     int level = gameState.getLevel();
 
-    redEnemy->update(gameplayTimer, level, deltaTime);
-    pinkEnemy->update(gameplayTimer, level, deltaTime);
-    cyanEnemy->update(gameplayTimer, level, deltaTime);
-    orangeEnemy->update(gameplayTimer, level, deltaTime);
+    for (const auto& enemy : enemies)
+    {
+        enemy->update(gameplayTimer, level, deltaTime);
+    }
 
     handleEnemyCollisions(currentFrame);
 }
@@ -128,17 +133,11 @@ void Game::nextLevel(float currentFrame)
 void Game::handleEnemyCollisions(float currentFrame)
 {
     const Rect playerRect = player->getPlayerRect();
-    const std::array<Enemy*, 4> enemies{
-        redEnemy.get(),
-        pinkEnemy.get(),
-        cyanEnemy.get(),
-        orangeEnemy.get()
-    };
 
     const bool hitByDangerousGhost = std::any_of(
         enemies.begin(),
         enemies.end(),
-        [&playerRect](const Enemy* enemy)
+        [&playerRect](const auto& enemy)
         {
             const State state = enemy->get_state();
             return enemy->checkCollision(playerRect) &&
@@ -166,7 +165,7 @@ void Game::handleEnemyCollisions(float currentFrame)
         return;
     }
 
-    for (Enemy* enemy : enemies)
+    for (const auto& enemy : enemies)
     {
         if (
             enemy->get_state() == State::Scared &&
@@ -437,19 +436,24 @@ bool Game::loadNextLevel(float currentFrame)
 void Game::resetEntitiesForLoadedLevel()
 {
     player->resetPlayer(gameGrid.getPacmanStartPosition());
-    redEnemy->resetGhost(gameGrid.getRedGhostSpawnPosition());
-    pinkEnemy->resetGhost(gameGrid.getPinkGhostSpawnPosition());
-    cyanEnemy->resetGhost(gameGrid.getBlueGhostSpawnPosition());
-    orangeEnemy->resetGhost(gameGrid.getOrangeGhostSpawnPosition());
+
+    const auto spawnPositions =
+        getEnemySpawnPositions(gameGrid);
+
+    for (std::size_t index = 0; index < enemies.size(); ++index)
+    {
+        enemies[index]->resetGhost(spawnPositions[index]);
+    }
 }
 
 bool Game::resetRound(float currentFrame)
 {
     player->resetPlayer();
-    redEnemy->resetGhost();
-    pinkEnemy->resetGhost();
-    cyanEnemy->resetGhost();
-    orangeEnemy->resetGhost();
+
+    for (const auto& enemy : enemies)
+    {
+        enemy->resetGhost();
+    }
 
     gameplayTimer = 0.0f;
     readyTimer = currentFrame + READY_DURATION;

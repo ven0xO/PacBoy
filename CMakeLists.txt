@@ -38,6 +38,8 @@ set(SOURCES
     src/Scoreboard.cpp
     src/GameRenderer.cpp
     src/GlfwInput.cpp
+    src/CameraController.cpp
+    src/FrameTimer.cpp
 )
 
 # headers
@@ -57,6 +59,50 @@ target_link_libraries(
     dl
     nlohmann_json::nlohmann_json
 )
+
+include(CTest)
+
+if(BUILD_TESTING)
+    add_executable(
+        enemy_regression_tests
+        tests/EnemyRegression.cpp
+        src/Grid.cpp
+        src/Player.cpp
+        src/Enemy.cpp
+        src/GameState.cpp
+        src/Game.cpp
+        src/Scoreboard.cpp
+    )
+
+    target_include_directories(
+        enemy_regression_tests
+        PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+    )
+
+    target_link_libraries(
+        enemy_regression_tests
+        PRIVATE
+        nlohmann_json::nlohmann_json
+    )
+
+    target_compile_definitions(
+        enemy_regression_tests
+        PRIVATE
+        TEST_LEVEL_PATH="${CMAKE_SOURCE_DIR}/assets/levels/classic_inspired.txt"
+    )
+
+    set_target_properties(
+        enemy_regression_tests
+        PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+
+    add_test(
+        NAME enemy_regression
+        COMMAND enemy_regression_tests
+    )
+
+endif()
 
 # shaders
 file(COPY ${CMAKE_SOURCE_DIR}/shaders DESTINATION ${CMAKE_SOURCE_DIR})

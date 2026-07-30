@@ -7,10 +7,9 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "../external/shader_s.h"
-#include "../external/camera.h"
+#include "CameraController.hpp"
+#include "FrameTimer.hpp"
 #include "Game.hpp"
-#include <cmath>
-#include <algorithm>
 #include "GameRenderer.hpp"
 #include "GlfwInput.hpp"
 
@@ -21,19 +20,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
-
-// Camera
-Camera camera(glm::vec3(0.0f, 5.0f, 10.0f)); 
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
-
-// Frame timing.
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-
-const glm::vec3 CAMERA_OFFSET = glm::vec3(0.0f, 5.0f, 10.0f);
-constexpr float MAX_DELTA_TIME = 0.05f;
 
 int main()
 {
@@ -94,6 +80,8 @@ int main()
     }
 
     glfwMakeContextCurrent(window);
+    CameraController cameraController(SCR_WIDTH, SCR_HEIGHT);
+    glfwSetWindowUserPointer(window, &cameraController);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -149,49 +137,29 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    FrameTimer frameTimer;
 
     // Main loop
     while(!glfwWindowShouldClose(window))
     {   
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = std::min(
-            currentFrame - lastFrame,
-            MAX_DELTA_TIME
-        );
-
-        lastFrame = currentFrame;
+        const float currentFrame =
+            static_cast<float>(glfwGetTime());
+        const float deltaTime =
+            frameTimer.update(currentFrame);
         
         processInput(window);
         game.processPlayerInput(readGameInput(window), currentFrame);
-        // Smoothly follow behind the player based on the current movement direction.
-        glm::vec3 playerPos = glm::vec3(game.getPlayerPtr()->getPosition().x, 0.0f, game.getPlayerPtr()->getPosition().y);
-        glm::vec2 playerDir = game.getPlayerPtr()->getCameraDirection();
-        glm::vec3 cameraOffset = CAMERA_OFFSET;
-
-        if (glm::length(playerDir) > 0.01f)
-        {
-            cameraOffset = glm::vec3(-playerDir.x, 0.0f, -playerDir.y) * glm::vec3(10.0f, 1.0f, 10.0f);
-            cameraOffset.y = 5.0f;
-        }
-        glm::vec3 targetCameraPos = playerPos + cameraOffset;
-        constexpr float CAMERA_FOLLOW_SPEED = 3.0f;
-        float followFactor = 1.0f - std::exp(-CAMERA_FOLLOW_SPEED * deltaTime);
-
-        camera.Position = glm::mix(
-            camera.Position,
-            targetCameraPos,
-            followFactor
-        );
+        cameraController.updateFollow(game, deltaTime);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         ourShader.use();
 
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(cameraController.getZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         int projectionLoc = glGetUniformLocation(ourShader.ID, "projection");
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-        glm::mat4 view = glm::lookAt(camera.Position, playerPos, glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 view = cameraController.getViewMatrix();
         int viewLoc = glGetUniformLocation(ourShader.ID, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
@@ -220,28 +188,39 @@ void processInput(GLFWwindow* window)
     }
 }
 
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+void mouse_callback(
+    GLFWwindow* window,
+    double xpos,
+    double ypos
+)
 {
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
+    auto* controller =
+        static_cast<CameraController*>(
+            glfwGetWindowUserPointer(window)
+        );
 
-    if (firstMouse)
+    if (controller != nullptr)
     {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
+        controller->processMouseMovement(
+            xpos,
+            ypos
+        );
     }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // Mouse y-coordinates are inverted.
-
-    lastX = xpos;
-    lastY = ypos;
-
-    camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+void scroll_callback(
+    GLFWwindow* window,
+    double,
+    double yoffset
+)
 {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+    auto* controller =
+        static_cast<CameraController*>(
+            glfwGetWindowUserPointer(window)
+        );
+
+    if (controller != nullptr)
+    {
+        controller->processMouseScroll(yoffset);
+    }
 }
