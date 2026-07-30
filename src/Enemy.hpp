@@ -26,7 +26,12 @@ class Enemy
 {
 public:
 
-    Enemy(Type enemy_type, Grid* grid_in, Player* player_in, glm::vec2 start_pos);
+    Enemy(
+        Type enemy_type,
+        Grid& grid_in,
+        Player& player_in,
+        glm::vec2 start_pos
+    );
 
     glm::vec2 find_target();
 
@@ -36,8 +41,7 @@ public:
     const glm::vec3& getColor() const { return color; }
     const glm::vec2& getTarget() const { return target; }
 
-    void set_red_ghost(Enemy* red_ghost_v);
-    void set_grid(Grid* grid_v);
+    void set_red_ghost(const Enemy& red_ghost_v);
     void set_state_dead()
     {
         state = State::Dead;
@@ -84,9 +88,10 @@ private:
     float scheduleTimer{0.0f};
     std::size_t scheduleIndex{0};
 
-    Enemy* red_ghost{nullptr};
-    Grid* grid;
-    Player* player;
+    // Only Blue uses this optional, non-owning link.
+    const Enemy* red_ghost{nullptr};
+    Grid& grid;
+    Player& player;
 
     static constexpr float SPEED = 3.0f;
     static constexpr float HITBOX_SIZE = 0.8f;

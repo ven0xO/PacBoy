@@ -17,7 +17,7 @@ enum class Direction
 class Player
 {
 public:
-    Player(float x, float y, GameState *state);
+    Player(float x, float y, GameState& state);
 
     // Grid-space movement helpers.
     void moveUp();
@@ -58,7 +58,7 @@ public:
 
     
 private:
-    GameState *gameState;
+    GameState& gameState;
     glm::vec2 position;          // Logical grid position.
     glm::vec3 color;             // Render color.
     glm::vec2 visual_position;   // Interpolated draw position.

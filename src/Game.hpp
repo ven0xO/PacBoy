@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -48,7 +49,6 @@ class Game
 public:
     Game(const std::vector<std::string>& level_paths);
 
-    Grid* getGridPtr() { return &gameGrid; }
     bool isInitialized() const { return initialized; }
 
     void update(float currentFrame, float deltaTime);
@@ -59,12 +59,14 @@ public:
 
     const Grid& getGrid() const { return gameGrid; }
     const Player& getPlayer() const { return *player; }
-    std::array<const Enemy*, 4> getEnemies() const {
+    std::array<std::reference_wrapper<const Enemy>, 4>
+    getEnemies() const
+    {
         return {
-            enemies[0].get(),
-            enemies[1].get(),
-            enemies[2].get(),
-            enemies[3].get()
+            std::cref(*enemies[0]),
+            std::cref(*enemies[1]),
+            std::cref(*enemies[2]),
+            std::cref(*enemies[3])
         };
     }
     const GameState& getGameState() const { return gameState; }

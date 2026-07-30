@@ -182,10 +182,10 @@ void GameRenderer::render(const Game& game, Shader& shader, unsigned int cubeVAO
 
     const auto enemies = game.getEnemies();
 
-    for (const Enemy* enemy : enemies)
+    for (const auto& enemy : enemies)
     {
         renderEnemy(
-            *enemy,
+            enemy.get(),
             shader,
             cubeVAO
         );

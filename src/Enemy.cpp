@@ -141,14 +141,14 @@ namespace
     }
 
     std::vector<glm::vec2> getCandidateMoves(
-        Grid* grid,
+        Grid& grid,
         const glm::vec2& position,
         const glm::vec2& direction,
         bool allowSpawnGate
     )
     {
         std::vector<glm::vec2> moves =
-            grid->possible_moves(position);
+            grid.possible_moves(position);
 
         if (!allowSpawnGate)
         {
@@ -156,9 +156,9 @@ namespace
                 std::remove_if(
                     moves.begin(),
                     moves.end(),
-                    [grid](const glm::vec2& move)
+                    [&grid](const glm::vec2& move)
                     {
-                        return grid->getTile(move.x, move.y) ==
+                        return grid.getTile(move.x, move.y) ==
                             Tile::GhostSpawnEntrance;
                     }
                 ),
@@ -231,23 +231,32 @@ namespace
     }
 }
 
-Enemy::Enemy(Type enemy_type, Grid* grid_in, Player* player_in, glm::vec2 start_pos) :
-type(enemy_type), 
-color(getEnemyConfig(enemy_type).normalColor),
-grid(grid_in),
-player(player_in),
-target(start_pos),
-position(start_pos),
-direction(0.0f, 0.0f),
-spawn_point(start_pos),
-enemyRect{start_pos.x - HITBOX_SIZE / 2.0f, start_pos.y - HITBOX_SIZE / 2.0f, HITBOX_SIZE}
+Enemy::Enemy(
+    Type enemy_type,
+    Grid& grid_in,
+    Player& player_in,
+    glm::vec2 start_pos
+)
+    : type(enemy_type),
+      target(start_pos),
+      position(start_pos),
+      direction(0.0f, 0.0f),
+      spawn_point(start_pos),
+      color(getEnemyConfig(enemy_type).normalColor),
+      enemyRect{
+          start_pos.x - HITBOX_SIZE / 2.0f,
+          start_pos.y - HITBOX_SIZE / 2.0f,
+          HITBOX_SIZE
+      },
+      grid(grid_in),
+      player(player_in)
 {
     spawn_entrance = findClosestPosition(
-        grid->getGhostEntryPositions(),
+        grid.getGhostEntryPositions(),
         spawn_point
     );
     spawn_exit = findClosestPosition(
-        grid->getGhostExitPositions(),
+        grid.getGhostExitPositions(),
         spawn_entrance
     );
     target = spawn_exit;
@@ -256,14 +265,9 @@ enemyRect{start_pos.x - HITBOX_SIZE / 2.0f, start_pos.y - HITBOX_SIZE / 2.0f, HI
     releaseDelay = getEnemyConfig(type).releaseDelay;
 }
 
-void Enemy::set_red_ghost(Enemy* red_ghost_v)
+void Enemy::set_red_ghost(const Enemy& red_ghost_v)
 {
-    red_ghost = red_ghost_v;
-}
-
-void Enemy::set_grid(Grid* grid_v)
-{
-    grid = grid_v;
+    red_ghost = &red_ghost_v;
 }
 
 void Enemy::calc_direction(glm::vec2 curr, glm::vec2 dest)
@@ -282,14 +286,14 @@ void Enemy::assign_scatter()
         getEnemyConfig(type).scatterCorner;
 
     scatter_target = glm::vec2(
-        corner.x * static_cast<float>(grid->getWidth()),
-        corner.y * static_cast<float>(grid->getHeight())
+        corner.x * static_cast<float>(grid.getWidth()),
+        corner.y * static_cast<float>(grid.getHeight())
     );
 }
 
 glm::vec2 Enemy::find_target()
 {
-    glm::vec2 player_position = glm::round(player->getPosition());
+    glm::vec2 player_position = glm::round(player.getPosition());
     // Each ghost type follows a different Pac-Man-style targeting rule.
     if(type == Type::Red)
     {
@@ -301,7 +305,7 @@ glm::vec2 Enemy::find_target()
         target =
             player_position +
             PINK_LOOKAHEAD_TILES *
-                player->getCurrentDirection();
+                player.getCurrentDirection();
         return target;
     }
     else if(type == Type::Orange)
@@ -320,7 +324,7 @@ glm::vec2 Enemy::find_target()
         glm::vec2 two_spaces =
             player_position +
             BLUE_LOOKAHEAD_TILES *
-                player->getCurrentDirection();
+                player.getCurrentDirection();
         target = 2.0f * two_spaces - red_ghost->get_position();
     }
 
@@ -399,7 +403,7 @@ bool Enemy::reverseDirectionIfNeeded(bool allowSpawnGate)
         position - direction;
 
     const Tile reverseTile =
-        grid->getTile(reversePosition.x, reversePosition.y);
+        grid.getTile(reversePosition.x, reversePosition.y);
 
     if (
         reverseTile == Tile::Wall ||
@@ -604,7 +608,7 @@ void Enemy::move(float deltaTime)
         }
     }
 
-    position = grid->wrapPosition(nextPosition);
+    position = grid.wrapPosition(nextPosition);
 
     enemyRect.x = position.x - HITBOX_SIZE / 2.0f;
     enemyRect.y = position.y - HITBOX_SIZE / 2.0f;
@@ -646,11 +650,11 @@ void Enemy::resetGhost(const glm::vec2& spawnPosition)
 {
     spawn_point = spawnPosition;
     spawn_entrance = findClosestPosition(
-        grid->getGhostEntryPositions(),
+        grid.getGhostEntryPositions(),
         spawn_point
     );
     spawn_exit = findClosestPosition(
-        grid->getGhostExitPositions(),
+        grid.getGhostExitPositions(),
         spawn_entrance
     );
     assign_scatter();

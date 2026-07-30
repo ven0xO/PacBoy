@@ -48,7 +48,7 @@ Game::Game(const std::vector<std::string>& level_paths) : levelPaths(level_paths
     player = std::make_unique<Player>(
         pacmanStart.x,
         pacmanStart.y,
-        &gameState
+        gameState
     );
 
     const auto spawnPositions =
@@ -58,15 +58,15 @@ Game::Game(const std::vector<std::string>& level_paths) : levelPaths(level_paths
     {
         enemies[index] = std::make_unique<Enemy>(
             ENEMY_TYPES[index],
-            &gameGrid,
-            player.get(),
+            gameGrid,
+            *player,
             spawnPositions[index]
         );
-    }
 
-    for (std::size_t index = 1; index < enemies.size(); ++index)
-    {
-        enemies[index]->set_red_ghost(enemies[0].get());
+        if (ENEMY_TYPES[index] == Type::Blue)
+        {
+            enemies[index]->set_red_ghost(*enemies[0]);
+        }
     }
 
     initialized = true;

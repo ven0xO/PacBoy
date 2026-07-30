@@ -14,7 +14,7 @@
 #include "GlfwInput.hpp"
 
 // GLFW callbacks and input handling.
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow& window);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
@@ -147,8 +147,11 @@ int main()
         const float deltaTime =
             frameTimer.update(currentFrame);
         
-        processInput(window);
-        game.processPlayerInput(readGameInput(window), currentFrame);
+        processInput(*window);
+        game.processPlayerInput(
+            readGameInput(*window),
+            currentFrame
+        );
         cameraController.updateFollow(game, deltaTime);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -180,11 +183,11 @@ int main()
     return 0;
 }
 
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow& window)
 {
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE))
+    if(glfwGetKey(&window, GLFW_KEY_ESCAPE))
     {
-        glfwSetWindowShouldClose(window, true);
+        glfwSetWindowShouldClose(&window, true);
     }
 }
 

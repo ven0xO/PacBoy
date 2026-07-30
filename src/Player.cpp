@@ -4,14 +4,15 @@
 #include <cmath>
 
 
-Player::Player(float x, float y, GameState *state) :  position(x, y), 
-                                        color(1.0f, 1.0f, 0.0f), 
-                                        visual_position(x, y), 
-                                        curr_direction(1.0f, 0.0f),
-                                        camera_direction(1.0f, 0.0f),
-                                        target_direction(1.0f, 0.0f),
-                                        gameState(state),
-                                        initialPosition(x, y)
+Player::Player(float x, float y, GameState& state)
+    : gameState(state),
+      position(x, y),
+      color(1.0f, 1.0f, 0.0f),
+      visual_position(x, y),
+      curr_direction(1.0f, 0.0f),
+      target_direction(1.0f, 0.0f),
+      camera_direction(1.0f, 0.0f),
+      initialPosition(x, y)
 {
 }
 
@@ -37,15 +38,15 @@ bool Player::collectPellet(int x, int y, Grid& grid)
     Tile tile = grid.getTile(x,y);
     if(tile == Tile::Pellet)
     {
-        gameState->addScore(10);
+        gameState.addScore(10);
         grid.collectTile(x,y);
-        gameState->collectPellet();
+        gameState.collectPellet();
         return true;
     } else if(tile == Tile::Energizer)
     {
-        gameState->addScore(50);
+        gameState.addScore(50);
         grid.collectTile(x,y);
-        gameState->collectEnergizer();
+        gameState.collectEnergizer();
         setEnergizerTrue();
         return true;
     }
@@ -171,7 +172,7 @@ void Player::killGhost()
 {
     static constexpr int ghostScores[] = {200, 400, 800, 1600};
 
-    gameState->addScore(ghostScores[multiplier]);
+    gameState.addScore(ghostScores[multiplier]);
 
     if(multiplier < 3)
     {

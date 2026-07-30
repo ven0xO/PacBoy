@@ -14,5 +14,6 @@ namespace PixelFont
     using Font = std::unordered_map<char, Glyph>;
 
     const Font& glyphs();
+    // Borrowed from the static font table; null when no fallback exists.
     const Glyph* findGlyph(char character);
 }

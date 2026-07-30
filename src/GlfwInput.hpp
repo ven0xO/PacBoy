@@ -4,4 +4,5 @@
 
 struct GLFWwindow;
 
-GameInput readGameInput(GLFWwindow* window);
+// Borrows an already validated GLFW window for the duration of the call.
+GameInput readGameInput(GLFWwindow& window);

@@ -7,6 +7,16 @@
 #include <array>
 #include <iostream>
 #include <stdexcept>
+#include <type_traits>
+
+static_assert(std::is_constructible_v<Player, float, float, GameState&>);
+static_assert(!std::is_constructible_v<Player, float, float, GameState*>);
+static_assert(
+    std::is_constructible_v<Enemy, Type, Grid&, Player&, glm::vec2>
+);
+static_assert(
+    !std::is_constructible_v<Enemy, Type, Grid*, Player*, glm::vec2>
+);
 
 namespace
 {
@@ -39,36 +49,36 @@ namespace
         GameState state;
         const glm::vec2 playerSpawn =
             grid.getPacmanStartPosition();
-        Player player(playerSpawn.x, playerSpawn.y, &state);
+        Player player(playerSpawn.x, playerSpawn.y, state);
         player.setPosition(20.0f, 20.0f);
 
         Enemy red(
             Type::Red,
-            &grid,
-            &player,
+            grid,
+            player,
             grid.getRedGhostSpawnPosition()
         );
         Enemy pink(
             Type::Pink,
-            &grid,
-            &player,
+            grid,
+            player,
             grid.getPinkGhostSpawnPosition()
         );
         Enemy blue(
             Type::Blue,
-            &grid,
-            &player,
+            grid,
+            player,
             grid.getBlueGhostSpawnPosition()
         );
         Enemy orange(
             Type::Orange,
-            &grid,
-            &player,
+            grid,
+            player,
             grid.getOrangeGhostSpawnPosition()
         );
 
         red.set_position(glm::vec2(5.0f, 5.0f));
-        blue.set_red_ghost(&red);
+        blue.set_red_ghost(red);
 
         require(
             isNear(red.find_target(), glm::vec2(20.0f, 20.0f)),
@@ -113,7 +123,7 @@ namespace
         GameState state;
         const glm::vec2 playerSpawn =
             grid.getPacmanStartPosition();
-        Player player(playerSpawn.x, playerSpawn.y, &state);
+        Player player(playerSpawn.x, playerSpawn.y, state);
 
         const std::array<Type, 4> types{
             Type::Red,
@@ -138,8 +148,8 @@ namespace
         {
             Enemy enemy(
                 types[index],
-                &grid,
-                &player,
+                grid,
+                player,
                 spawns[index]
             );
 
@@ -177,12 +187,12 @@ namespace
         Player player(
             playerSpawn.x,
             playerSpawn.y,
-            &gameState
+            gameState
         );
         Enemy enemy(
             Type::Red,
-            &grid,
-            &player,
+            grid,
+            player,
             grid.getRedGhostSpawnPosition()
         );
 
@@ -223,12 +233,12 @@ namespace
         Player player(
             playerSpawn.x,
             playerSpawn.y,
-            &gameState
+            gameState
         );
         Enemy enemy(
             Type::Red,
-            &grid,
-            &player,
+            grid,
+            player,
             grid.getRedGhostSpawnPosition()
         );
 
@@ -284,9 +294,12 @@ namespace
         require(game.startNewGame(0.0f), "new game did not start");
 
         auto initialEnemies = game.getEnemies();
-        for (const Enemy* enemy : initialEnemies)
+        for (const auto& enemy : initialEnemies)
         {
-            require(enemy != nullptr, "ghost collection is incomplete");
+            require(
+                enemy.get().get_state() == State::Scatter,
+                "ghost collection is incomplete"
+            );
         }
 
         Player& player =
@@ -294,10 +307,10 @@ namespace
         player.setEnergizerTrue();
         game.update(2.0f, 0.0f);
 
-        for (const Enemy* enemy : game.getEnemies())
+        for (const auto& enemy : game.getEnemies())
         {
             require(
-                enemy->get_state() == State::Scared,
+                enemy.get().get_state() == State::Scared,
                 "energizer did not affect every ghost"
             );
         }
@@ -314,12 +327,12 @@ namespace
         for (std::size_t index = 0; index < resetEnemies.size(); ++index)
         {
             require(
-                resetEnemies[index]->get_state() == State::Scatter,
+                resetEnemies[index].get().get_state() == State::Scatter,
                 "reset did not restore every ghost state"
             );
             require(
                 isNear(
-                    resetEnemies[index]->get_position(),
+                    resetEnemies[index].get().get_position(),
                     spawns[index]
                 ),
                 "reset did not restore every ghost position"
