@@ -46,6 +46,19 @@ height(heighti)
     glBindVertexArray(0);
 }
 
+Hud::~Hud()
+{
+    if (VBO != 0)
+    {
+        glDeleteBuffers(1, &VBO);
+    }
+
+    if (VAO != 0)
+    {
+        glDeleteVertexArrays(1, &VAO);
+    }
+}
+
 void Hud::render(const GameState& state)
 {
     drawRectangle(

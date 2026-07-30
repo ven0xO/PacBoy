@@ -21,6 +21,23 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+namespace
+{
+    class GlfwGuard
+    {
+    public:
+        GlfwGuard() = default;
+
+        GlfwGuard(const GlfwGuard&) = delete;
+        GlfwGuard& operator=(const GlfwGuard&) = delete;
+
+        ~GlfwGuard()
+        {
+            glfwTerminate();
+        }
+    };
+}
+
 int main()
 {
     // Shared cube mesh used for tiles and characters.
@@ -66,6 +83,8 @@ int main()
         std::cerr << "Failed to initialize GLFW.\n";
         return -1;
     }
+
+    GlfwGuard glfwGuard;
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -75,7 +94,6 @@ int main()
     if(window == nullptr)
     {
         std::cerr << "Failed to create GLFW window.\n";
-        glfwTerminate();
         return -1;
     }
 
@@ -90,7 +108,6 @@ int main()
     if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cerr << "Failed to initialize GLAD.\n";
-        glfwTerminate();
         return -1;
     }
 
@@ -98,14 +115,12 @@ int main()
     Game game({"./assets/levels/classic_inspired.txt"});
     if (!game.isInitialized())
     {
-        glfwTerminate();
         return -1;
     }
 
     GameRenderer gameRenderer(SCR_WIDTH, SCR_HEIGHT);
     if (!gameRenderer.isValid())
     {
-        glfwTerminate();
         return -1;
     }
 
@@ -113,7 +128,6 @@ int main()
     Shader ourShader("./shaders/shader.vs", "./shaders/shader.fs");
     if (!ourShader.isValid())
     {
-        glfwTerminate();
         return -1;
     }
 
@@ -179,7 +193,6 @@ int main()
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 
-    glfwTerminate();
     return 0;
 }
 

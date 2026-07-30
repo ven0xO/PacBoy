@@ -12,6 +12,7 @@ class Hud
 {
 public:
     Hud(int widthi, int heighti);
+    ~Hud();
     bool isValid() const { return shader.isValid(); }
 
     void render(const GameState& state);

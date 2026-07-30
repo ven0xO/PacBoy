@@ -91,6 +91,17 @@ public:
         glDeleteShader(fragment);
     }
 
+    Shader(const Shader&) = delete;
+    Shader& operator=(const Shader&) = delete;
+
+    ~Shader()
+    {
+        if (ID != 0)
+        {
+            glDeleteProgram(ID);
+        }
+    }
+
     bool isValid() const
     {
         return ID != 0;
