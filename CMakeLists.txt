@@ -48,8 +48,18 @@ endfunction()
 
 if(PACBOY_ENABLE_CLANG_TIDY)
     find_program(CLANG_TIDY_EXECUTABLE NAMES clang-tidy REQUIRED)
-    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXECUTABLE};--quiet")
 endif()
+
+function(pacboy_enable_clang_tidy target_name)
+    if(NOT PACBOY_ENABLE_CLANG_TIDY)
+        return()
+    endif()
+
+    set_property(
+        TARGET ${target_name}
+        PROPERTY CXX_CLANG_TIDY "${CLANG_TIDY_EXECUTABLE};--quiet"
+    )
+endfunction()
 
 # required libraries
 find_package(OpenGL REQUIRED)
@@ -128,13 +138,34 @@ target_link_libraries(
 )
 
 pacboy_enable_sanitizers(${PROJECT_NAME})
+pacboy_enable_clang_tidy(${PROJECT_NAME})
 
 include(CTest)
 
 if(BUILD_TESTING)
+    find_package(Catch2 3 CONFIG QUIET)
+
+    if(NOT Catch2_FOUND)
+        FetchContent_Declare(
+            Catch2
+            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG v3.15.0
+            GIT_SHALLOW TRUE
+        )
+
+        FetchContent_MakeAvailable(Catch2)
+
+        list(APPEND CMAKE_MODULE_PATH "${catch2_SOURCE_DIR}/extras")
+    endif()
+
+    include(Catch)
+
     add_executable(
-        enemy_regression_tests
+        pacboy_tests
         tests/EnemyRegression.cpp
+        tests/GameFlowTests.cpp
+        tests/GameStateScoreboardTests.cpp
+        tests/GridPlayerTests.cpp
         src/Grid.cpp
         src/Player.cpp
         src/Enemy.cpp
@@ -144,7 +175,7 @@ if(BUILD_TESTING)
     )
 
     target_compile_features(
-        enemy_regression_tests
+        pacboy_tests
         PRIVATE
         cxx_std_17
     )
@@ -152,7 +183,7 @@ if(BUILD_TESTING)
     if(PACBOY_ENABLE_WARNINGS)
         if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
             target_compile_options(
-                enemy_regression_tests
+                pacboy_tests
                 PRIVATE
                 -Wall
                 -Wextra
@@ -160,7 +191,7 @@ if(BUILD_TESTING)
             )
         elseif(MSVC)
             target_compile_options(
-                enemy_regression_tests
+                pacboy_tests
                 PRIVATE
                 /W4
                 /permissive-
@@ -169,28 +200,30 @@ if(BUILD_TESTING)
     endif()
 
     target_include_directories(
-        enemy_regression_tests
+        pacboy_tests
         PRIVATE
         ${CMAKE_SOURCE_DIR}/src
     )
 
     target_link_libraries(
-        enemy_regression_tests
+        pacboy_tests
         PRIVATE
         nlohmann_json::nlohmann_json
+        Catch2::Catch2WithMain
     )
 
-    pacboy_enable_sanitizers(enemy_regression_tests)
+    pacboy_enable_sanitizers(pacboy_tests)
+    pacboy_enable_clang_tidy(pacboy_tests)
 
     target_compile_definitions(
-        enemy_regression_tests
+        pacboy_tests
         PRIVATE
         TEST_LEVEL_PATH="${CMAKE_SOURCE_DIR}/assets/levels/classic_inspired.txt"
     )
 
-    add_test(
-        NAME enemy_regression
-        COMMAND enemy_regression_tests
+    catch_discover_tests(
+        pacboy_tests
+        DISCOVERY_MODE PRE_TEST
     )
 
 endif()

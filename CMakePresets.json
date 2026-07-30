@@ -15,7 +15,9 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_TESTING": true,
-        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "PACBOY_ENABLE_CLANG_TIDY": false,
+        "PACBOY_ENABLE_SANITIZERS": false
       }
     },
     {
@@ -43,7 +45,8 @@
       "description": "Debug build with clang-tidy enabled",
       "binaryDir": "${sourceDir}/build/tidy",
       "cacheVariables": {
-        "PACBOY_ENABLE_CLANG_TIDY": true
+        "PACBOY_ENABLE_CLANG_TIDY": true,
+        "PACBOY_ENABLE_SANITIZERS": false
       }
     },
     {
@@ -53,6 +56,7 @@
       "description": "Debug build with AddressSanitizer and UndefinedBehaviorSanitizer",
       "binaryDir": "${sourceDir}/build/sanitizers",
       "cacheVariables": {
+        "PACBOY_ENABLE_CLANG_TIDY": false,
         "PACBOY_ENABLE_SANITIZERS": true
       }
     }
