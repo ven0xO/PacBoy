@@ -74,6 +74,45 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(json)
 
+FetchContent_Declare(
+    miniaudio
+    URL https://github.com/mackron/miniaudio/archive/refs/tags/0.11.25.tar.gz
+    URL_HASH SHA256=b900edcffe979816e2560a0580b9b1216d674b4f17fbadeca8f777a7f8ab0274
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+FetchContent_GetProperties(miniaudio)
+
+if(NOT miniaudio_POPULATED)
+    FetchContent_Populate(miniaudio)
+endif()
+
+add_library(
+    pacboy_miniaudio
+    STATIC
+    "${miniaudio_SOURCE_DIR}/miniaudio.c"
+)
+
+target_include_directories(
+    pacboy_miniaudio
+    SYSTEM PUBLIC
+    "${miniaudio_SOURCE_DIR}"
+)
+
+if(UNIX)
+    find_package(Threads REQUIRED)
+    target_link_libraries(
+        pacboy_miniaudio
+        PUBLIC
+        Threads::Threads
+        ${CMAKE_DL_LIBS}
+    )
+
+    if(NOT APPLE)
+        target_link_libraries(pacboy_miniaudio PUBLIC m)
+    endif()
+endif()
+
 # sources
 set(SOURCES 
     src/main.cpp
@@ -90,6 +129,7 @@ set(SOURCES
     src/GlfwInput.cpp
     src/CameraController.cpp
     src/FrameTimer.cpp
+    src/AudioManager.cpp
 )
 
 # create exe
@@ -135,6 +175,7 @@ target_link_libraries(
     glfw
     ${CMAKE_DL_LIBS}
     nlohmann_json::nlohmann_json
+    pacboy_miniaudio
 )
 
 pacboy_enable_sanitizers(${PROJECT_NAME})
@@ -242,6 +283,11 @@ add_custom_target(
         "${CMAKE_CURRENT_BINARY_DIR}/assets/levels"
 
     COMMAND
+        ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/audio"
+        "${CMAKE_CURRENT_BINARY_DIR}/assets/audio"
+
+    COMMAND
         ${CMAKE_COMMAND} -E make_directory
         "${CMAKE_CURRENT_BINARY_DIR}/assets/scores"
 
@@ -262,4 +308,9 @@ install(
 install(
     DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/levels/"
     DESTINATION "assets/levels"
+)
+
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/audio/"
+    DESTINATION "assets/audio"
 )

@@ -246,7 +246,7 @@ void Hud::renderMainMenu(int selected)
 
     const std::string navigationHint{"USE ARROWS TO SELECT"};
     const std::string confirmHint{"ENTER TO CONFIRM"};
-    const std::string exitHint{"ESC TO EXIT"};
+    const std::string exitHint{"M TO MUTE   ESC TO EXIT"};
     constexpr float hintScale{2.0f};
 
     renderText(navigationHint, centeredX(navigationHint, hintScale), 460.0f, hintScale,
@@ -373,7 +373,7 @@ void Hud::renderPause(int selected)
 
     const std::string navigationHint{"USE ARROWS AND ENTER"};
     const std::string resumeHint{"P TO RESUME"};
-    const std::string exitHint{"ESC TO EXIT"};
+    const std::string exitHint{"M TO MUTE   ESC TO EXIT"};
     constexpr float informationScale{2.0f};
 
     renderText(navigationHint, centeredX(navigationHint, informationScale), 447.0f,

@@ -11,6 +11,7 @@ struct GameInput
     bool enter{false};
     bool backspace{false};
     bool pause{false};
+    bool mute{false};
 
     std::array<bool, 26> letters{};
 };

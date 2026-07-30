@@ -9,8 +9,10 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -77,9 +79,22 @@ namespace
         return input;
     }
 
+    GameInput pressedDown()
+    {
+        GameInput input;
+        input.down = true;
+        return input;
+    }
+
     void releaseKeys(Game& game, float currentFrame)
     {
         game.processPlayerInput(GameInput{}, currentFrame);
+    }
+
+    void checkEvents(Game& game, std::initializer_list<GameEvent> expected)
+    {
+        const std::vector<GameEvent> events = game.takeEvents();
+        CHECK(static_cast<bool>(events == std::vector<GameEvent>(expected)));
     }
 } // namespace
 
@@ -122,27 +137,32 @@ TEST_CASE("Dangerous collisions respect invulnerability and the final hit ends t
     Game game({level.getPath()});
     REQUIRE(game.isInitialized());
     REQUIRE(game.startNewGame(0.0f));
+    checkEvents(game, {});
 
     game.update(READY_DURATION, 0.1f);
 
     REQUIRE(game.getGameState().getLives() == 2);
     REQUIRE(game.getPhase() == GamePhase::Ready);
+    checkEvents(game, {GameEvent::PlayerDamaged});
 
     game.update(2.0f * READY_DURATION, 0.1f);
 
     CHECK(game.getGameState().getLives() == 2);
     CHECK(game.getPhase() == GamePhase::Playing);
+    checkEvents(game, {});
 
     game.update(2.0f * READY_DURATION + 0.1f, 1.4f);
 
     REQUIRE(game.getGameState().getLives() == 1);
     REQUIRE(game.getPhase() == GamePhase::Ready);
+    checkEvents(game, {GameEvent::PlayerDamaged});
 
     game.update(3.0f * READY_DURATION + 0.1f, 1.5f);
 
     CHECK(game.getGameState().getLives() == 0);
     CHECK(game.getGameState().isGameOver());
     CHECK(game.getPhase() == GamePhase::GameOver);
+    checkEvents(game, {GameEvent::GameOver});
 
     REQUIRE(game.startNewGame(10.0f));
 
@@ -170,11 +190,15 @@ TEST_CASE("Eating an energizer makes a colliding ghost scared and awards points"
     Game game({level.getPath()});
     REQUIRE(game.isInitialized());
     REQUIRE(game.startNewGame(0.0f));
+    checkEvents(game, {});
 
     game.processPlayerInput(pressedForward(), 0.0f);
     game.update(READY_DURATION, 0.0f);
     game.update(READY_DURATION + 0.1f, 1.0f / 3.0f);
+    checkEvents(game, {});
+
     game.update(READY_DURATION + 0.2f, 0.0f);
+    checkEvents(game, {GameEvent::EnergizerCollected});
 
     REQUIRE(game.getGameState().getScore() == 50);
 
@@ -184,6 +208,7 @@ TEST_CASE("Eating an energizer makes a colliding ghost scared and awards points"
     }
 
     game.update(READY_DURATION + 0.3f, 1.0f / 3.0f);
+    checkEvents(game, {GameEvent::GhostEaten});
 
     CHECK(game.getGameState().getScore() == 250);
     CHECK(game.getGameState().getLives() == 3);
@@ -214,6 +239,10 @@ TEST_CASE("Completing a level loads the next map and loops the configured level 
     game.nextLevel(READY_DURATION);
     REQUIRE(game.getPhase() == GamePhase::LevelComplete);
     CHECK(game.getGameState().getLevel() == 1);
+    checkEvents(game, {GameEvent::LevelCompleted});
+
+    game.nextLevel(READY_DURATION + 0.1f);
+    checkEvents(game, {});
 
     game.nextLevel(READY_DURATION + LEVEL_COMPLETE_DURATION);
 
@@ -227,6 +256,7 @@ TEST_CASE("Completing a level loads the next map and loops the configured level 
 
     game.nextLevel(2.0f * READY_DURATION + LEVEL_COMPLETE_DURATION);
     REQUIRE(game.getPhase() == GamePhase::LevelComplete);
+    checkEvents(game, {GameEvent::LevelCompleted});
 
     game.nextLevel(2.0f * READY_DURATION + 2.0f * LEVEL_COMPLETE_DURATION);
 
@@ -234,6 +264,65 @@ TEST_CASE("Completing a level loads the next map and loops the configured level 
     CHECK(game.getGameState().getLevel() == 3);
     CHECK(game.getGrid().getWidth() == 8);
     CHECK(game.getPlayer().getPosition() == game.getGrid().getPacmanStartPosition());
+}
+
+TEST_CASE("Menu audio events are edge-triggered and ignore blocked navigation")
+{
+    const TemporaryLevel level{"########\n"
+                               "#P     #\n"
+                               "#rSE   #\n"
+                               "#pbo   #\n"
+                               "########\n"};
+
+    Game game({level.getPath()});
+    REQUIRE(game.isInitialized());
+
+    game.processPlayerInput(pressedDown(), 0.0f);
+    CHECK(game.getSelectedMenuOption() == MainMenuOption::Scoreboard);
+    checkEvents(game, {GameEvent::MenuNavigate});
+
+    game.processPlayerInput(pressedDown(), 0.0f);
+    checkEvents(game, {});
+
+    releaseKeys(game, 0.0f);
+    game.processPlayerInput(pressedDown(), 0.0f);
+    checkEvents(game, {});
+
+    releaseKeys(game, 0.0f);
+    game.processPlayerInput(pressedEnter(), 0.0f);
+    CHECK(game.getPhase() == GamePhase::Scoreboard);
+    checkEvents(game, {GameEvent::MenuSelect});
+
+    game.processPlayerInput(pressedEnter(), 0.0f);
+    checkEvents(game, {});
+}
+
+TEST_CASE("Collectible audio events identify pellets and energizers exactly once")
+{
+    const TemporaryLevel level{"##########\n"
+                               "#P.*     #\n"
+                               "#rSE     #\n"
+                               "#pbo     #\n"
+                               "##########\n"};
+
+    Game game({level.getPath()});
+    REQUIRE(game.isInitialized());
+    REQUIRE(game.startNewGame(0.0f));
+
+    game.processPlayerInput(pressedForward(), 0.0f);
+    game.update(READY_DURATION, 0.0f);
+    game.update(READY_DURATION + 0.1f, 1.0f / 3.0f);
+    checkEvents(game, {});
+
+    game.update(READY_DURATION + 0.2f, 0.0f);
+    checkEvents(game, {GameEvent::PelletCollected});
+
+    game.update(READY_DURATION + 0.3f, 1.0f / 3.0f);
+    game.update(READY_DURATION + 0.4f, 0.0f);
+    checkEvents(game, {GameEvent::EnergizerCollected});
+
+    game.update(READY_DURATION + 0.5f, 0.0f);
+    checkEvents(game, {});
 }
 
 TEST_CASE("Headless gameplay flow covers menu, Ready, Playing, Pause, and level completion")

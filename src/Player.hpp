@@ -16,13 +16,20 @@ enum class Direction
     Forward
 };
 
+enum class CollectedTile
+{
+    None,
+    Pellet,
+    Energizer
+};
+
 class Player
 {
 public:
     Player(float x, float y, GameState& state);
 
-    bool update(Grid& grid, float deltaTime);
-    bool collectPellet(int x, int y, Grid& grid);
+    CollectedTile update(Grid& grid, float deltaTime);
+    CollectedTile collectPellet(int x, int y, Grid& grid);
 
     glm::vec2 getPosition() const
     {

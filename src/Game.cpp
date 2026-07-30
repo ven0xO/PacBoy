@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <utility>
 
 namespace
 {
@@ -69,7 +70,16 @@ void Game::update(float currentFrame, float deltaTime)
 
     gameplayTimer += deltaTime;
 
-    player->update(gameGrid, deltaTime);
+    const CollectedTile collectedTile = player->update(gameGrid, deltaTime);
+
+    if (collectedTile == CollectedTile::Pellet)
+    {
+        pendingEvents.push_back(GameEvent::PelletCollected);
+    }
+    else if (collectedTile == CollectedTile::Energizer)
+    {
+        pendingEvents.push_back(GameEvent::EnergizerCollected);
+    }
 
     if (player->getEnergizer())
     {
@@ -97,6 +107,7 @@ void Game::nextLevel(float currentFrame)
     {
         phase = GamePhase::LevelComplete;
         levelCompleteUntil = currentFrame + LEVEL_COMPLETE_DURATION;
+        pendingEvents.push_back(GameEvent::LevelCompleted);
         return;
     }
 
@@ -126,11 +137,13 @@ void Game::handleEnemyCollisions(float currentFrame)
 
         if (!gameState.isGameOver())
         {
+            pendingEvents.push_back(GameEvent::PlayerDamaged);
             resetRound(currentFrame);
         }
         else
         {
             phase = GamePhase::GameOver;
+            pendingEvents.push_back(GameEvent::GameOver);
         }
 
         return;
@@ -142,6 +155,7 @@ void Game::handleEnemyCollisions(float currentFrame)
         {
             enemy->set_state_dead();
             player->killGhost();
+            pendingEvents.push_back(GameEvent::GhostEaten);
         }
     }
 }
@@ -164,10 +178,12 @@ void Game::processPlayerInput(const GameInput& input, float currentFrame)
         {
             phase = GamePhase::Paused;
             selectedPauseMenuOption = PauseMenuOption::Resume;
+            pendingEvents.push_back(GameEvent::MenuSelect);
         }
         else if (phase == GamePhase::Paused)
         {
             phase = GamePhase::Playing;
+            pendingEvents.push_back(GameEvent::MenuSelect);
         }
     }
 
@@ -192,6 +208,7 @@ void Game::processPlayerInput(const GameInput& input, float currentFrame)
     }
     else if (phase == GamePhase::MainMenu)
     {
+        const MainMenuOption previousSelection = selectedMenuOption;
         int selected = static_cast<int>(selectedMenuOption);
 
         const int optionCount = static_cast<int>(MainMenuOption::Count);
@@ -207,23 +224,31 @@ void Game::processPlayerInput(const GameInput& input, float currentFrame)
 
         selectedMenuOption = static_cast<MainMenuOption>(selected);
 
+        if (selectedMenuOption != previousSelection)
+        {
+            pendingEvents.push_back(GameEvent::MenuNavigate);
+        }
+
         if (keyEnter && !prevKeyEnter)
         {
             if (selectedMenuOption == MainMenuOption::StartGame)
             {
                 if (startNewGame(currentFrame))
                 {
+                    pendingEvents.push_back(GameEvent::MenuSelect);
                     return;
                 }
             }
             else if (selectedMenuOption == MainMenuOption::Scoreboard)
             {
                 phase = GamePhase::Scoreboard;
+                pendingEvents.push_back(GameEvent::MenuSelect);
             }
         }
     }
     else if (phase == GamePhase::Paused)
     {
+        const PauseMenuOption previousSelection = selectedPauseMenuOption;
         int selected = static_cast<int>(selectedPauseMenuOption);
         const int optionCount = static_cast<int>(PauseMenuOption::Count);
 
@@ -238,15 +263,22 @@ void Game::processPlayerInput(const GameInput& input, float currentFrame)
 
         selectedPauseMenuOption = static_cast<PauseMenuOption>(selected);
 
+        if (selectedPauseMenuOption != previousSelection)
+        {
+            pendingEvents.push_back(GameEvent::MenuNavigate);
+        }
+
         if (keyEnter && !prevKeyEnter)
         {
             if (selectedPauseMenuOption == PauseMenuOption::Resume)
             {
                 phase = GamePhase::Playing;
+                pendingEvents.push_back(GameEvent::MenuSelect);
             }
             else if (selectedPauseMenuOption == PauseMenuOption::MainMenu)
             {
                 phase = GamePhase::MainMenu;
+                pendingEvents.push_back(GameEvent::MenuSelect);
             }
         }
     }
@@ -255,13 +287,17 @@ void Game::processPlayerInput(const GameInput& input, float currentFrame)
         if (keyEnter && !prevKeyEnter)
         {
             phase = GamePhase::MainMenu;
+            pendingEvents.push_back(GameEvent::MenuSelect);
         }
     }
     else if (phase == GamePhase::LevelComplete)
     {
         if (keyEnter && !prevKeyEnter)
         {
-            loadNextLevel(currentFrame);
+            if (loadNextLevel(currentFrame))
+            {
+                pendingEvents.push_back(GameEvent::MenuSelect);
+            }
         }
     }
     else if (phase == GamePhase::GameOver)
@@ -278,6 +314,8 @@ void Game::processPlayerInput(const GameInput& input, float currentFrame)
             {
                 phase = GamePhase::MainMenu;
             }
+
+            pendingEvents.push_back(GameEvent::MenuSelect);
         }
     }
     else if (phase == GamePhase::NewScore)
@@ -306,6 +344,7 @@ void Game::processPlayerInput(const GameInput& input, float currentFrame)
             scoreboard.addScore(enteredName, gameState.getScore());
 
             phase = GamePhase::Scoreboard;
+            pendingEvents.push_back(GameEvent::MenuSelect);
         }
     }
 
@@ -316,6 +355,13 @@ void Game::processPlayerInput(const GameInput& input, float currentFrame)
     prevKeyEnter = keyEnter;
     prevKeyBackspace = keyBackspace;
     prevKeyP = keyP;
+}
+
+std::vector<GameEvent> Game::takeEvents()
+{
+    std::vector<GameEvent> events = std::move(pendingEvents);
+    pendingEvents.clear();
+    return events;
 }
 
 bool Game::startNewGame(float currentFrame)
@@ -338,6 +384,7 @@ bool Game::startNewGame(float currentFrame)
     invulnerableUntil = 0.0f;
     levelCompleteUntil = 0.0f;
     enteredName.clear();
+    pendingEvents.clear();
 
     selectedMenuOption = MainMenuOption::StartGame;
     selectedPauseMenuOption = PauseMenuOption::Resume;

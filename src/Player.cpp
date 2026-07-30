@@ -21,7 +21,7 @@ Player::Player(float x, float y, GameState& state)
 {
 }
 
-bool Player::collectPellet(int x, int y, Grid& grid)
+CollectedTile Player::collectPellet(int x, int y, Grid& grid)
 {
     Tile tile = grid.getTile(x, y);
     if (tile == Tile::Pellet)
@@ -29,7 +29,7 @@ bool Player::collectPellet(int x, int y, Grid& grid)
         gameState.addScore(10);
         grid.collectTile(x, y);
         gameState.collectPellet();
-        return true;
+        return CollectedTile::Pellet;
     }
     else if (tile == Tile::Energizer)
     {
@@ -37,9 +37,9 @@ bool Player::collectPellet(int x, int y, Grid& grid)
         grid.collectTile(x, y);
         gameState.collectEnergizer();
         setEnergizerTrue();
-        return true;
+        return CollectedTile::Energizer;
     }
-    return false;
+    return CollectedTile::None;
 }
 
 void Player::setDirection(Direction direct, bool updateCamera)
@@ -77,8 +77,9 @@ void Player::setDirection(Direction direct, bool updateCamera)
     }
 }
 
-bool Player::update(Grid& grid, float deltaTime)
+CollectedTile Player::update(Grid& grid, float deltaTime)
 {
+    CollectedTile collectedTile = CollectedTile::None;
 
     if (curr_direction != glm::vec2(0.0f, 0.0f) &&
         glm::length(curr_direction - camera_direction) > 0.01f)
@@ -96,7 +97,7 @@ bool Player::update(Grid& grid, float deltaTime)
         visual_position = tileCenter;
         // Turn and collision decisions are only stable near tile centers.
         const glm::ivec2 currentTile = toTileCoordinates(visual_position);
-        collectPellet(currentTile.x, currentTile.y, grid);
+        collectedTile = collectPellet(currentTile.x, currentTile.y, grid);
 
         glm::ivec2 nextTile = toTileCoordinates(visual_position + curr_direction);
         Tile new_pos_tile = grid.getTile(nextTile.x, nextTile.y);
@@ -129,7 +130,7 @@ bool Player::update(Grid& grid, float deltaTime)
     move(deltaTime);
     visual_position = grid.wrapPosition(visual_position);
 
-    return true;
+    return collectedTile;
 }
 
 void Player::setPosition(float x, float y)

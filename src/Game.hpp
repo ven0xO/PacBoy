@@ -3,6 +3,7 @@
 #include "Grid.hpp"
 #include "Player.hpp"
 #include "Enemy.hpp"
+#include "GameEvent.hpp"
 #include "GameState.hpp"
 #include "Scoreboard.hpp"
 #include "GameInput.hpp"
@@ -55,6 +56,7 @@ public:
     void processPlayerInput(const GameInput& input, float currentFrame);
     bool startNewGame(float currentFrame);
     bool resetRound(float currentFrame);
+    std::vector<GameEvent> takeEvents();
 
     const Grid& getGrid() const
     {
@@ -118,6 +120,7 @@ private:
     std::vector<std::string> levelPaths;
     std::size_t currentLevelIndex{0};
     std::string enteredName;
+    std::vector<GameEvent> pendingEvents;
     bool initialized{false};
 
     void handleEnemyCollisions(float currentFrame);

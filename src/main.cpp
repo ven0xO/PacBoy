@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "../external/shader_s.h"
+#include "AudioManager.hpp"
 #include "CameraController.hpp"
 #include "FrameTimer.hpp"
 #include "Game.hpp"
@@ -175,6 +176,8 @@ int main()
     glEnableVertexAttribArray(1);
 
     FrameTimer frameTimer;
+    AudioManager audioManager;
+    bool previousMuteKey{false};
 
     while (!glfwWindowShouldClose(window))
     {
@@ -182,7 +185,16 @@ int main()
         const float deltaTime = frameTimer.update(currentFrame);
 
         processInput(*window);
-        game.processPlayerInput(readGameInput(*window), currentFrame);
+        const GameInput input = readGameInput(*window);
+
+        if (input.mute && !previousMuteKey && game.getPhase() != GamePhase::NewScore)
+        {
+            audioManager.toggleMuted();
+            glfwSetWindowTitle(window, audioManager.isMuted() ? "PacBoy - MUTED" : "PacBoy");
+        }
+
+        previousMuteKey = input.mute;
+        game.processPlayerInput(input, currentFrame);
         cameraController.updateFollow(game, deltaTime);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -202,6 +214,11 @@ int main()
         glfwPollEvents();
 
         game.nextLevel(currentFrame);
+
+        for (const GameEvent event : game.takeEvents())
+        {
+            audioManager.play(event);
+        }
     }
 
     glDeleteVertexArrays(1, &VAO);

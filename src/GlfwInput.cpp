@@ -14,6 +14,7 @@ GameInput readGameInput(GLFWwindow& window)
     input.enter = glfwGetKey(&window, GLFW_KEY_ENTER) == GLFW_PRESS;
     input.backspace = glfwGetKey(&window, GLFW_KEY_BACKSPACE) == GLFW_PRESS;
     input.pause = glfwGetKey(&window, GLFW_KEY_P) == GLFW_PRESS;
+    input.mute = glfwGetKey(&window, GLFW_KEY_M) == GLFW_PRESS;
 
     for (int key = GLFW_KEY_A; key <= GLFW_KEY_Z; ++key)
     {
