@@ -1,6 +1,7 @@
 #pragma once
 
-struct Rect {
+struct Rect
+{
     float x, y;
     float w;
 };

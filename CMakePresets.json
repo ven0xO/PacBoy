@@ -14,7 +14,8 @@
       "binaryDir": "${sourceDir}/build/debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "BUILD_TESTING": true
+        "BUILD_TESTING": true,
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
       }
     },
     {
@@ -34,6 +35,26 @@
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTING": false
       }
+    },
+    {
+      "name": "tidy",
+      "inherits": "test",
+      "displayName": "Clang-Tidy",
+      "description": "Debug build with clang-tidy enabled",
+      "binaryDir": "${sourceDir}/build/tidy",
+      "cacheVariables": {
+        "PACBOY_ENABLE_CLANG_TIDY": true
+      }
+    },
+    {
+      "name": "sanitizers",
+      "inherits": "test",
+      "displayName": "Sanitizers",
+      "description": "Debug build with AddressSanitizer and UndefinedBehaviorSanitizer",
+      "binaryDir": "${sourceDir}/build/sanitizers",
+      "cacheVariables": {
+        "PACBOY_ENABLE_SANITIZERS": true
+      }
     }
   ],
   "buildPresets": [
@@ -51,6 +72,16 @@
       "name": "release",
       "displayName": "Build Release",
       "configurePreset": "release"
+    },
+    {
+      "name": "tidy",
+      "displayName": "Build with Clang-Tidy",
+      "configurePreset": "tidy"
+    },
+    {
+      "name": "sanitizers",
+      "displayName": "Build with Sanitizers",
+      "configurePreset": "sanitizers"
     }
   ],
   "testPresets": [
@@ -64,6 +95,22 @@
       "execution": {
         "noTestsAction": "error",
         "stopOnFailure": true
+      }
+    },
+    {
+      "name": "sanitizers",
+      "displayName": "Run Tests with Sanitizers",
+      "configurePreset": "sanitizers",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      },
+      "environment": {
+        "ASAN_OPTIONS": "halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
       }
     }
   ]

@@ -6,18 +6,11 @@
 #include <system_error>
 #include <nlohmann/json.hpp>
 
-Scoreboard::Scoreboard(const std::string& path)
-    : filePath(path)
+Scoreboard::Scoreboard(const std::string& path) : filePath(path)
 {
     loadFromFile();
-    std::sort(
-        entries.begin(),
-        entries.end(),
-        [](const ScoreEntry& first, const ScoreEntry& second)
-        {
-            return first.score > second.score;
-        }
-    );
+    std::sort(entries.begin(), entries.end(), [](const ScoreEntry& first, const ScoreEntry& second)
+              { return first.score > second.score; });
 
     if (entries.size() > 10)
     {
@@ -29,14 +22,8 @@ void Scoreboard::addScore(const std::string& name, int score)
 {
     entries.push_back({name, score});
 
-    std::sort(
-        entries.begin(),
-        entries.end(),
-        [](const ScoreEntry& first, const ScoreEntry& second)
-        {
-            return first.score > second.score;
-        }
-    );
+    std::sort(entries.begin(), entries.end(), [](const ScoreEntry& first, const ScoreEntry& second)
+              { return first.score > second.score; });
 
     if (entries.size() > 10)
     {
@@ -68,9 +55,7 @@ void Scoreboard::loadFromFile()
 
         if (error)
         {
-            std::cerr
-                << "Cannot create scoreboard directory: "
-                << error.message() << '\n';
+            std::cerr << "Cannot create scoreboard directory: " << error.message() << '\n';
             return;
         }
 
@@ -85,12 +70,10 @@ void Scoreboard::loadFromFile()
 
         std::vector<ScoreEntry> loadedEntries;
 
-        for(const auto& scoreData : data.at("scores"))
+        for (const auto& scoreData : data.at("scores"))
         {
-            loadedEntries.push_back({
-                scoreData.at("name").get<std::string>(),
-                scoreData.at("score").get<int>()
-            });
+            loadedEntries.push_back(
+                {scoreData.at("name").get<std::string>(), scoreData.at("score").get<int>()});
         }
 
         entries = loadedEntries;
@@ -99,10 +82,8 @@ void Scoreboard::loadFromFile()
     {
         entries.clear();
 
-        std::cerr
-            << "Failed to load scoreboard '" << filePath
-            << "': " << error.what()
-            << "; using an empty scoreboard.\n";
+        std::cerr << "Failed to load scoreboard '" << filePath << "': " << error.what()
+                  << "; using an empty scoreboard.\n";
     }
 }
 
@@ -113,10 +94,7 @@ void Scoreboard::saveToFile() const
 
     for (const auto& entry : entries)
     {
-        data["scores"].push_back({
-            {"name", entry.name},
-            {"score", entry.score}
-        });
+        data["scores"].push_back({{"name", entry.name}, {"score", entry.score}});
     }
 
     std::ofstream file(filePath);

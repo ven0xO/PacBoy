@@ -13,7 +13,10 @@ class Scoreboard
 {
 public:
     explicit Scoreboard(const std::string& path);
-    int getHighScore() const { return entries.empty() ? -1 : entries[0].score; }
+    int getHighScore() const
+    {
+        return entries.empty() ? -1 : entries[0].score;
+    }
     void addScore(const std::string& name, int score);
     bool isHighScore(int score) const;
     const std::vector<ScoreEntry>& getScoreEntries() const

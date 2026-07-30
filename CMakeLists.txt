@@ -20,6 +20,37 @@ option(
     OFF
 )
 
+function(pacboy_enable_sanitizers target_name)
+    if(NOT PACBOY_ENABLE_SANITIZERS)
+        return()
+    endif()
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(
+            ${target_name}
+            PRIVATE
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer
+        )
+
+        target_link_options(
+            ${target_name}
+            PRIVATE
+            -fsanitize=address,undefined
+        )
+    else()
+        message(
+            FATAL_ERROR
+            "Sanitizers are currently supported only with GCC or Clang"
+        )
+    endif()
+endfunction()
+
+if(PACBOY_ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXECUTABLE NAMES clang-tidy REQUIRED)
+    set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXECUTABLE};--quiet")
+endif()
+
 # required libraries
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
@@ -67,6 +98,25 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/external
 )
 
+if(PACBOY_ENABLE_WARNINGS)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(
+            ${PROJECT_NAME}
+            PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+            $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+            $<$<COMPILE_LANGUAGE:CXX>:-Wpedantic>
+        )
+    elseif(MSVC)
+        target_compile_options(
+            ${PROJECT_NAME}
+            PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:/W4>
+            $<$<COMPILE_LANGUAGE:CXX>:/permissive->
+        )
+    endif()
+endif()
+
 # linking
 target_link_libraries(
     ${PROJECT_NAME}
@@ -76,6 +126,8 @@ target_link_libraries(
     ${CMAKE_DL_LIBS}
     nlohmann_json::nlohmann_json
 )
+
+pacboy_enable_sanitizers(${PROJECT_NAME})
 
 include(CTest)
 
@@ -97,6 +149,25 @@ if(BUILD_TESTING)
         cxx_std_17
     )
 
+    if(PACBOY_ENABLE_WARNINGS)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            target_compile_options(
+                enemy_regression_tests
+                PRIVATE
+                -Wall
+                -Wextra
+                -Wpedantic
+            )
+        elseif(MSVC)
+            target_compile_options(
+                enemy_regression_tests
+                PRIVATE
+                /W4
+                /permissive-
+            )
+        endif()
+    endif()
+
     target_include_directories(
         enemy_regression_tests
         PRIVATE
@@ -108,6 +179,8 @@ if(BUILD_TESTING)
         PRIVATE
         nlohmann_json::nlohmann_json
     )
+
+    pacboy_enable_sanitizers(enemy_regression_tests)
 
     target_compile_definitions(
         enemy_regression_tests

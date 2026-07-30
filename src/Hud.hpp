@@ -12,7 +12,10 @@ class Hud
 public:
     Hud(int widthi, int heighti);
     ~Hud();
-    bool isValid() const { return shader.isValid(); }
+    bool isValid() const
+    {
+        return shader.isValid();
+    }
 
     void beginRender();
     void endRender();
@@ -23,28 +26,13 @@ public:
     void renderPause(int selected);
     void renderScoreboard(const Scoreboard& scoreboard);
     void renderGameOver(const GameState& state);
-    void renderHighScore(
-        const std::string& playerName,
-        int score,
-        bool isNewHighestScore
-    );
+    void renderHighScore(const std::string& playerName, int score, bool isNewHighestScore);
 
 private:
-    void renderText(
-        const std::string& text,
-        float x,
-        float y,
-        float scale,
-        glm::vec3 textColor = glm::vec3(1.0f, 1.0f, 0.0f)
-    );
-    void drawRectangle(
-        float x,
-        float y,
-        float rectangleWidth,
-        float rectangleHeight,
-        glm::vec3 color,
-        float alpha = 1.0f
-    );
+    void renderText(const std::string& text, float x, float y, float scale,
+                    glm::vec3 textColor = glm::vec3(1.0f, 1.0f, 0.0f));
+    void drawRectangle(float x, float y, float rectangleWidth, float rectangleHeight,
+                       glm::vec3 color, float alpha = 1.0f);
 
     unsigned int VAO{0};
     unsigned int VBO{0};

@@ -15,4 +15,4 @@ namespace PixelFont
 
     // Borrowed from the static font table; null when no fallback exists.
     const Glyph* findGlyph(char character);
-}
+} // namespace PixelFont

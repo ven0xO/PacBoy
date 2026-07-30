@@ -45,7 +45,10 @@ class Game
 public:
     Game(const std::vector<std::string>& level_paths);
 
-    bool isInitialized() const { return initialized; }
+    bool isInitialized() const
+    {
+        return initialized;
+    }
 
     void update(float currentFrame, float deltaTime);
     void nextLevel(float currentFrame);
@@ -53,25 +56,43 @@ public:
     bool startNewGame(float currentFrame);
     bool resetRound(float currentFrame);
 
-    const Grid& getGrid() const { return gameGrid; }
-    const Player& getPlayer() const { return *player; }
-    std::array<std::reference_wrapper<const Enemy>, 4>
-    getEnemies() const
+    const Grid& getGrid() const
     {
-        return {
-            std::cref(*enemies[0]),
-            std::cref(*enemies[1]),
-            std::cref(*enemies[2]),
-            std::cref(*enemies[3])
-        };
+        return gameGrid;
     }
-    const GameState& getGameState() const { return gameState; }
-    GamePhase getPhase() const { return phase; }
-    MainMenuOption getSelectedMenuOption() const { return selectedMenuOption; }
-    PauseMenuOption getSelectedPauseMenuOption() const { return selectedPauseMenuOption; }
-    const Scoreboard& getScoreboard() const { return scoreboard; }
-    const std::string& getEnteredName() const { return enteredName; }
-
+    const Player& getPlayer() const
+    {
+        return *player;
+    }
+    std::array<std::reference_wrapper<const Enemy>, 4> getEnemies() const
+    {
+        return {std::cref(*enemies[0]), std::cref(*enemies[1]), std::cref(*enemies[2]),
+                std::cref(*enemies[3])};
+    }
+    const GameState& getGameState() const
+    {
+        return gameState;
+    }
+    GamePhase getPhase() const
+    {
+        return phase;
+    }
+    MainMenuOption getSelectedMenuOption() const
+    {
+        return selectedMenuOption;
+    }
+    PauseMenuOption getSelectedPauseMenuOption() const
+    {
+        return selectedPauseMenuOption;
+    }
+    const Scoreboard& getScoreboard() const
+    {
+        return scoreboard;
+    }
+    const std::string& getEnteredName() const
+    {
+        return enteredName;
+    }
 
 private:
     Grid gameGrid;
@@ -80,13 +101,9 @@ private:
     Scoreboard scoreboard{"./assets/scores/scores.json"};
     GamePhase phase{GamePhase::MainMenu};
 
-    MainMenuOption selectedMenuOption{
-        MainMenuOption::StartGame
-    };
+    MainMenuOption selectedMenuOption{MainMenuOption::StartGame};
 
-    PauseMenuOption selectedPauseMenuOption{
-        PauseMenuOption::Resume
-    };
+    PauseMenuOption selectedPauseMenuOption{PauseMenuOption::Resume};
 
     std::array<std::unique_ptr<Enemy>, 4> enemies;
 

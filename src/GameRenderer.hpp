@@ -13,7 +13,11 @@ class GameRenderer
 public:
     GameRenderer(int width, int height);
     void render(const Game& game, const Shader& shader, unsigned int cubeVAO);
-    bool isValid() const { return hud.isValid(); }
+    bool isValid() const
+    {
+        return hud.isValid();
+    }
+
 private:
     Hud hud;
 

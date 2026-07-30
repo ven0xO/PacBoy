@@ -24,25 +24,44 @@ public:
     bool update(Grid& grid, float deltaTime);
     bool collectPellet(int x, int y, Grid& grid);
 
-    glm::vec2 getPosition() const { return visual_position; }
-    glm::vec2 getCurrentDirection() const {return curr_direction; }
-    glm::vec2 getCameraDirection() const {return camera_direction;}
+    glm::vec2 getPosition() const
+    {
+        return visual_position;
+    }
+    glm::vec2 getCurrentDirection() const
+    {
+        return curr_direction;
+    }
+    glm::vec2 getCameraDirection() const
+    {
+        return camera_direction;
+    }
     Rect getPlayerRect() const
     {
-        return Rect{
-        visual_position.x - HITBOX_SIZE / 2.0f,
-        visual_position.y - HITBOX_SIZE / 2.0f,
-        HITBOX_SIZE
-        };
+        return Rect{visual_position.x - HITBOX_SIZE / 2.0f, visual_position.y - HITBOX_SIZE / 2.0f,
+                    HITBOX_SIZE};
     }
-    const glm::vec3& getColor() const { return color; }
-    bool getEnergizer() const { return energizer; }
+    const glm::vec3& getColor() const
+    {
+        return color;
+    }
+    bool getEnergizer() const
+    {
+        return energizer;
+    }
     void setPosition(float x, float y);
     void setPosition(const glm::vec2& pos);
     void setDirection(Direction direct, bool updateCamera = false);
-    void setEnergizerTrue() { energizer = true; multiplier = 0; }
+    void setEnergizerTrue()
+    {
+        energizer = true;
+        multiplier = 0;
+    }
 
-    void resetEnergizer() { energizer = false; }
+    void resetEnergizer()
+    {
+        energizer = false;
+    }
     void killGhost();
     void resetPlayer();
     void resetPlayer(const glm::vec2& spawnPosition);

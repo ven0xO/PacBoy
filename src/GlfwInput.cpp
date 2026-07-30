@@ -19,8 +19,7 @@ GameInput readGameInput(GLFWwindow& window)
     {
         const std::size_t index = static_cast<std::size_t>(key - GLFW_KEY_A);
 
-        input.letters[index] =
-            glfwGetKey(&window, key) == GLFW_PRESS;
+        input.letters[index] = glfwGetKey(&window, key) == GLFW_PRESS;
     }
 
     return input;

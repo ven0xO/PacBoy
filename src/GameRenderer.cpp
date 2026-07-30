@@ -10,26 +10,39 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-GameRenderer::GameRenderer(int width, int height)
-    : hud(width, height)
-{
-
-}
+GameRenderer::GameRenderer(int width, int height) : hud(width, height) {}
 
 void GameRenderer::renderGrid(const Grid& grid)
 {
-    for(int y{}; y < grid.getHeight(); y++)
+    for (int y{}; y < grid.getHeight(); y++)
     {
-        for(int x = 0; x < grid.getWidth(); x++)
+        for (int x = 0; x < grid.getWidth(); x++)
         {
             Tile tile = grid.getTile(x, y);
-            if (tile == Tile::Empty ||
-                tile == Tile::Tunnel ||
-                tile == Tile::GhostStart ||
-                tile == Tile::GhostSpawnExit ||
-                tile == Tile::PacmanStart)
+            switch (tile)
             {
-                continue;
+                case Tile::Empty:
+                case Tile::Tunnel:
+                case Tile::GhostStart:
+                case Tile::GhostSpawnExit:
+                case Tile::PacmanStart:
+                    continue;
+
+                case Tile::Wall:
+                    glUniform3f(objectColorLocation, 0.0f, 0.0f, 1.0f);
+                    break;
+
+                case Tile::Pellet:
+                    glUniform3f(objectColorLocation, 1.0f, 1.0f, 0.0f);
+                    break;
+
+                case Tile::Energizer:
+                    glUniform3f(objectColorLocation, 1.0f, 0.0f, 1.0f);
+                    break;
+
+                case Tile::GhostSpawnEntrance:
+                    glUniform3f(objectColorLocation, 1.0f, 0.0f, 0.0f);
+                    break;
             }
 
             glm::mat4 model = glm::mat4(1.0f);
@@ -37,22 +50,7 @@ void GameRenderer::renderGrid(const Grid& grid)
 
             glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 
-            switch (tile) {
-                case Tile::Wall:
-                    glUniform3f(objectColorLocation, 0.0f, 0.0f, 1.0f);
-                    break;
-                case Tile::Pellet:
-                    glUniform3f(objectColorLocation, 1.0f, 1.0f, 0.0f);
-                    break;
-                case Tile::Energizer:
-                    glUniform3f(objectColorLocation, 1.0f, 0.0f, 1.0f);
-                    break;
-                case Tile::GhostSpawnEntrance:
-                    glUniform3f(objectColorLocation, 1.0f, 0.0f, 0.0f);
-                    break;
-            }
-            
-            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
         }
     }
 }
@@ -90,19 +88,19 @@ void GameRenderer::renderPlayer(const Player& player)
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(position.x, 0.1f, position.y));
     model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
-    
+
     glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
-    
+
     glUniform3f(objectColorLocation, color.r, color.g, color.b);
-    
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
 }
 
 void GameRenderer::renderEnemy(const Enemy& enemy)
 {
     const glm::vec2 position = enemy.get_position();
     const glm::vec3& color = enemy.getColor();
-    
+
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(position.x, 0.1f, position.y));
     model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
@@ -111,14 +109,10 @@ void GameRenderer::renderEnemy(const Enemy& enemy)
 
     glUniform3f(objectColorLocation, color.r, color.g, color.b);
 
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
 }
 
-void GameRenderer::render(
-    const Game& game,
-    const Shader& shader,
-    unsigned int cubeVAO
-)
+void GameRenderer::render(const Game& game, const Shader& shader, unsigned int cubeVAO)
 {
     cacheUniformLocations(shader);
     const GamePhase phase = game.getPhase();
@@ -127,11 +121,7 @@ void GameRenderer::render(
     {
         beginHudPass();
 
-        hud.renderMainMenu(
-            static_cast<int>(
-                game.getSelectedMenuOption()
-            )
-        );
+        hud.renderMainMenu(static_cast<int>(game.getSelectedMenuOption()));
 
         endHudPass();
         return;
@@ -141,9 +131,7 @@ void GameRenderer::render(
     {
         beginHudPass();
 
-        hud.renderScoreboard(
-            game.getScoreboard()
-        );
+        hud.renderScoreboard(game.getScoreboard());
 
         endHudPass();
         return;
@@ -175,11 +163,7 @@ void GameRenderer::render(
     }
     else if (phase == GamePhase::Paused)
     {
-        hud.renderPause(
-            static_cast<int>(
-                game.getSelectedPauseMenuOption()
-            )
-        );
+        hud.renderPause(static_cast<int>(game.getSelectedPauseMenuOption()));
     }
     else if (phase == GamePhase::LevelComplete)
     {
@@ -193,11 +177,8 @@ void GameRenderer::render(
     {
         const int score = state.getScore();
 
-        hud.renderHighScore(
-            game.getEnteredName(),
-            score,
-            game.getScoreboard().getHighScore() < score
-        );
+        hud.renderHighScore(game.getEnteredName(), score,
+                            game.getScoreboard().getHighScore() < score);
     }
 
     endHudPass();

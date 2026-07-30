@@ -28,20 +28,26 @@ enum class Type
 class Enemy
 {
 public:
-
-    Enemy(
-        Type enemy_type,
-        Grid& grid_in,
-        Player& player_in,
-        glm::vec2 start_pos
-    );
+    Enemy(Type enemy_type, Grid& grid_in, Player& player_in, glm::vec2 start_pos);
 
     glm::vec2 find_target();
 
-    glm::vec2 get_position() const {return position;}
-    glm::vec2 get_spawn_point() const {return spawn_point;}
-    State get_state() const {return state;}
-    const glm::vec3& getColor() const { return color; }
+    glm::vec2 get_position() const
+    {
+        return position;
+    }
+    glm::vec2 get_spawn_point() const
+    {
+        return spawn_point;
+    }
+    State get_state() const
+    {
+        return state;
+    }
+    const glm::vec3& getColor() const
+    {
+        return color;
+    }
 
     void set_red_ghost(const Enemy& red_ghost_v);
     void set_state_dead()
@@ -50,7 +56,10 @@ public:
         target = spawn_entrance;
         state_change = false;
     }
-    void set_position(glm::vec2 pos) { position = pos; }
+    void set_position(glm::vec2 pos)
+    {
+        position = pos;
+    }
     void assign_scatter();
     void enterScared(float timer);
     void update(float timer, int level, float deltaTime);
@@ -59,7 +68,6 @@ public:
     bool checkCollision(const Rect& playerRect) const;
     void resetGhost();
     void resetGhost(const glm::vec2& spawnPosition);
-    
 
 private:
     Type type;
@@ -79,13 +87,10 @@ private:
     bool is_at_center(glm::vec2 pos);
     void updateState(float timer, int level, float deltaTime);
     bool reverseDirectionIfNeeded(bool allowSpawnGate);
-    bool chooseNextDirection(
-        bool allowSpawnGate,
-        bool directionReversed
-    );
+    bool chooseNextDirection(bool allowSpawnGate, bool directionReversed);
 
     bool state_change = false;
-    float scaredUntil {0};
+    float scaredUntil{0};
     float releaseDelay{0.0f};
     float scheduleTimer{0.0f};
     std::size_t scheduleIndex{0};

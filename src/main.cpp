@@ -35,46 +35,30 @@ namespace
             glfwTerminate();
         }
     };
-}
+} // namespace
 
 int main()
 {
     // Shared cube mesh used for tiles and characters.
-    float vertices[] = {
-        // Front face
-        -0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
+    float vertices[] = {// Front face
+                        -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f,
 
-        // Back face
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-        -0.5f,  0.5f, -0.5f
-    };
+                        // Back face
+                        -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f,
+                        -0.5f};
 
-    unsigned int indices[] = {
-        // Front face
-        0, 1, 2,
-        2, 3, 0,
-        // Back face
-        4, 5, 6,
-        6, 7, 4,
-        // Left face
-        4, 7, 3,
-        3, 0, 4,
-        // Right face
-        1, 5, 6,
-        6, 2, 1,
-        // Bottom face
-        0, 1, 5,
-        5, 4, 0,
-        // Top face
-        3, 2, 6,
-        6, 7, 3
-    };
-
+    unsigned int indices[] = {// Front face
+                              0, 1, 2, 2, 3, 0,
+                              // Back face
+                              4, 5, 6, 6, 7, 4,
+                              // Left face
+                              4, 7, 3, 3, 0, 4,
+                              // Right face
+                              1, 5, 6, 6, 2, 1,
+                              // Bottom face
+                              0, 1, 5, 5, 4, 0,
+                              // Top face
+                              3, 2, 6, 6, 7, 3};
 
     if (!glfwInit())
     {
@@ -87,15 +71,9 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(
-        SCR_WIDTH,
-        SCR_HEIGHT,
-        "PacBoy",
-        nullptr,
-        nullptr
-    );
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "PacBoy", nullptr, nullptr);
 
-    if(window == nullptr)
+    if (window == nullptr)
     {
         std::cerr << "Failed to create GLFW window.\n";
         return -1;
@@ -108,12 +86,11 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cerr << "Failed to initialize GLAD.\n";
         return -1;
     }
-
 
     Game game({"./assets/levels/classic_inspired.txt"});
     if (!game.isInitialized())
@@ -127,7 +104,6 @@ int main()
         return -1;
     }
 
-    
     Shader ourShader("./shaders/shader.vs", "./shaders/shader.fs");
     if (!ourShader.isValid())
     {
@@ -156,29 +132,25 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0);
 
     FrameTimer frameTimer;
 
-    while(!glfwWindowShouldClose(window))
-    {   
-        const float currentFrame =
-            static_cast<float>(glfwGetTime());
-        const float deltaTime =
-            frameTimer.update(currentFrame);
-        
+    while (!glfwWindowShouldClose(window))
+    {
+        const float currentFrame = static_cast<float>(glfwGetTime());
+        const float deltaTime = frameTimer.update(currentFrame);
+
         processInput(*window);
-        game.processPlayerInput(
-            readGameInput(*window),
-            currentFrame
-        );
+        game.processPlayerInput(readGameInput(*window), currentFrame);
         cameraController.updateFollow(game, deltaTime);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         ourShader.use();
 
-        glm::mat4 projection = glm::perspective(glm::radians(cameraController.getZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(cameraController.getZoom()),
+                                                (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         glm::mat4 view = cameraController.getViewMatrix();
@@ -202,42 +174,25 @@ int main()
 
 void processInput(GLFWwindow& window)
 {
-    if(glfwGetKey(&window, GLFW_KEY_ESCAPE))
+    if (glfwGetKey(&window, GLFW_KEY_ESCAPE))
     {
         glfwSetWindowShouldClose(&window, true);
     }
 }
 
-void mouse_callback(
-    GLFWwindow* window,
-    double xpos,
-    double ypos
-)
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    auto* controller =
-        static_cast<CameraController*>(
-            glfwGetWindowUserPointer(window)
-        );
+    auto* controller = static_cast<CameraController*>(glfwGetWindowUserPointer(window));
 
     if (controller != nullptr)
     {
-        controller->processMouseMovement(
-            xpos,
-            ypos
-        );
+        controller->processMouseMovement(xpos, ypos);
     }
 }
 
-void scroll_callback(
-    GLFWwindow* window,
-    double,
-    double yoffset
-)
+void scroll_callback(GLFWwindow* window, double, double yoffset)
 {
-    auto* controller =
-        static_cast<CameraController*>(
-            glfwGetWindowUserPointer(window)
-        );
+    auto* controller = static_cast<CameraController*>(glfwGetWindowUserPointer(window));
 
     if (controller != nullptr)
     {

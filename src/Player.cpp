@@ -6,50 +6,56 @@
 
 #include <cmath>
 
+namespace
+{
+    glm::ivec2 toTileCoordinates(const glm::vec2& position)
+    {
+        return glm::ivec2{static_cast<int>(std::round(position.x)),
+                          static_cast<int>(std::round(position.y))};
+    }
+} // namespace
+
 Player::Player(float x, float y, GameState& state)
-    : gameState(state),
-      color(1.0f, 1.0f, 0.0f),
-      visual_position(x, y),
-      curr_direction(1.0f, 0.0f),
-      target_direction(1.0f, 0.0f),
-      camera_direction(1.0f, 0.0f),
-      initialPosition(x, y)
+    : gameState(state), color(1.0f, 1.0f, 0.0f), visual_position(x, y), curr_direction(1.0f, 0.0f),
+      target_direction(1.0f, 0.0f), camera_direction(1.0f, 0.0f), initialPosition(x, y)
 {
 }
 
 bool Player::collectPellet(int x, int y, Grid& grid)
 {
-    Tile tile = grid.getTile(x,y);
-    if(tile == Tile::Pellet)
+    Tile tile = grid.getTile(x, y);
+    if (tile == Tile::Pellet)
     {
         gameState.addScore(10);
-        grid.collectTile(x,y);
+        grid.collectTile(x, y);
         gameState.collectPellet();
         return true;
-    } else if(tile == Tile::Energizer)
+    }
+    else if (tile == Tile::Energizer)
     {
         gameState.addScore(50);
-        grid.collectTile(x,y);
+        grid.collectTile(x, y);
         gameState.collectEnergizer();
         setEnergizerTrue();
         return true;
     }
     return false;
-    
 }
 
 void Player::setDirection(Direction direct, bool updateCamera)
 {
     // Convert camera-relative input into one of the four grid directions.
     glm::vec2 snapped_camera_dir = camera_direction;
-    if(glm::abs(snapped_camera_dir.x) > glm::abs(snapped_camera_dir.y))
+    if (glm::abs(snapped_camera_dir.x) > glm::abs(snapped_camera_dir.y))
     {
         snapped_camera_dir = glm::vec2(glm::sign(snapped_camera_dir.x), 0.0f);
-    } else {
+    }
+    else
+    {
         snapped_camera_dir = glm::vec2(0.0f, glm::sign(snapped_camera_dir.y));
     }
-    
-    switch(direct)
+
+    switch (direct)
     {
         case Direction::Forward:
             target_direction = snapped_camera_dir;
@@ -73,53 +79,47 @@ void Player::setDirection(Direction direct, bool updateCamera)
 
 bool Player::update(Grid& grid, float deltaTime)
 {
-    
-    if(curr_direction != glm::vec2(0.0f, 0.0f) && glm::length(curr_direction - camera_direction) > 0.01f)
+
+    if (curr_direction != glm::vec2(0.0f, 0.0f) &&
+        glm::length(curr_direction - camera_direction) > 0.01f)
     {
         constexpr float CAMERA_TURN_SPEED = 5.0f;
         float turnFactor = 1.0f - std::exp(-CAMERA_TURN_SPEED * deltaTime);
 
-        camera_direction = glm::mix(
-            camera_direction,
-            curr_direction,
-            turnFactor
-        );
+        camera_direction = glm::mix(camera_direction, curr_direction, turnFactor);
     }
     constexpr float CENTER_EPSILON = 0.001f;
     const glm::vec2 tileCenter = glm::round(visual_position);
-
 
     if (glm::length(visual_position - tileCenter) < CENTER_EPSILON)
     {
         visual_position = tileCenter;
         // Turn and collision decisions are only stable near tile centers.
-        collectPellet(round(visual_position.x), round(visual_position.y), grid);
-        Tile new_pos_tile = grid.getTile(
-            glm::round(visual_position.x + curr_direction.x), 
-            glm::round(visual_position.y + curr_direction.y));
+        const glm::ivec2 currentTile = toTileCoordinates(visual_position);
+        collectPellet(currentTile.x, currentTile.y, grid);
 
-        if(new_pos_tile == Tile::Wall)
+        glm::ivec2 nextTile = toTileCoordinates(visual_position + curr_direction);
+        Tile new_pos_tile = grid.getTile(nextTile.x, nextTile.y);
+
+        if (new_pos_tile == Tile::Wall)
         {
-            new_pos_tile = grid.getTile(
-                glm::round(visual_position.x + target_direction.x), 
-                glm::round(visual_position.y + target_direction.y)
-            );
+            nextTile = toTileCoordinates(visual_position + target_direction);
+            new_pos_tile = grid.getTile(nextTile.x, nextTile.y);
 
-            if(new_pos_tile != Tile::Wall)
+            if (new_pos_tile != Tile::Wall)
             {
                 curr_direction = target_direction;
             }
             else
             {
-                curr_direction = glm::vec2(0.0f, 0.0f); 
+                curr_direction = glm::vec2(0.0f, 0.0f);
             }
-        }else
+        }
+        else
         {
-            new_pos_tile = grid.getTile(
-                glm::round(visual_position.x + target_direction.x), 
-                glm::round(visual_position.y + target_direction.y)
-            );
-            if(new_pos_tile != Tile::Wall)
+            nextTile = toTileCoordinates(visual_position + target_direction);
+            new_pos_tile = grid.getTile(nextTile.x, nextTile.y);
+            if (new_pos_tile != Tile::Wall)
             {
                 curr_direction = target_direction;
             }
@@ -129,7 +129,7 @@ bool Player::update(Grid& grid, float deltaTime)
     move(deltaTime);
     visual_position = grid.wrapPosition(visual_position);
 
-   return true;
+    return true;
 }
 
 void Player::setPosition(float x, float y)
@@ -149,12 +149,11 @@ void Player::killGhost()
 
     gameState.addScore(ghostScores[multiplier]);
 
-    if(multiplier < 3)
+    if (multiplier < 3)
     {
         multiplier++;
     }
 }
-
 
 void Player::resetPlayer()
 {
@@ -178,13 +177,11 @@ void Player::move(float deltaTime)
     constexpr float EPSILON = 0.0001f;
 
     const float movement = SPEED * deltaTime;
-    glm::vec2 nextPosition =
-        visual_position + curr_direction * movement;
+    glm::vec2 nextPosition = visual_position + curr_direction * movement;
 
     if (curr_direction.x > 0.0f)
     {
-        const float nextCenter =
-            std::floor(visual_position.x + EPSILON) + 1.0f;
+        const float nextCenter = std::floor(visual_position.x + EPSILON) + 1.0f;
 
         if (nextPosition.x >= nextCenter)
         {
@@ -194,8 +191,7 @@ void Player::move(float deltaTime)
     }
     else if (curr_direction.x < 0.0f)
     {
-        const float nextCenter =
-            std::ceil(visual_position.x - EPSILON) - 1.0f;
+        const float nextCenter = std::ceil(visual_position.x - EPSILON) - 1.0f;
 
         if (nextPosition.x <= nextCenter)
         {
@@ -205,8 +201,7 @@ void Player::move(float deltaTime)
     }
     else if (curr_direction.y > 0.0f)
     {
-        const float nextCenter =
-            std::floor(visual_position.y + EPSILON) + 1.0f;
+        const float nextCenter = std::floor(visual_position.y + EPSILON) + 1.0f;
 
         if (nextPosition.y >= nextCenter)
         {
@@ -216,8 +211,7 @@ void Player::move(float deltaTime)
     }
     else if (curr_direction.y < 0.0f)
     {
-        const float nextCenter =
-            std::ceil(visual_position.y - EPSILON) - 1.0f;
+        const float nextCenter = std::ceil(visual_position.y - EPSILON) - 1.0f;
 
         if (nextPosition.y <= nextCenter)
         {
