@@ -393,11 +393,6 @@ namespace
     };
 }
 
-const PixelFont::Font& PixelFont::glyphs()
-{
-    return FONT;
-}
-
 const PixelFont::Glyph* PixelFont::findGlyph(char character)
 {
     if (character >= 'a' && character <= 'z')

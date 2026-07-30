@@ -13,7 +13,6 @@
 #include "GameRenderer.hpp"
 #include "GlfwInput.hpp"
 
-// GLFW callbacks and input handling.
 void processInput(GLFWwindow& window);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -43,16 +42,16 @@ int main()
     // Shared cube mesh used for tiles and characters.
     float vertices[] = {
         // Front face
-        -0.5f, -0.5f,  0.5f, // Bottom-left
-         0.5f, -0.5f,  0.5f, // Bottom-right
-         0.5f,  0.5f,  0.5f, // Top-right
-        -0.5f,  0.5f,  0.5f, // Top-left
+        -0.5f, -0.5f,  0.5f,
+         0.5f, -0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,
 
         // Back face
-        -0.5f, -0.5f, -0.5f, // Bottom-left
-         0.5f, -0.5f, -0.5f, // Bottom-right
-         0.5f,  0.5f, -0.5f, // Top-right
-        -0.5f,  0.5f, -0.5f  // Top-left
+        -0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f,  0.5f, -0.5f,
+        -0.5f,  0.5f, -0.5f
     };
 
     unsigned int indices[] = {
@@ -77,7 +76,6 @@ int main()
     };
 
 
-    // Initialize GLFW
     if (!glfwInit())
     {
         std::cerr << "Failed to initialize GLFW.\n";
@@ -89,7 +87,13 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "PacBoy", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(
+        SCR_WIDTH,
+        SCR_HEIGHT,
+        "PacBoy",
+        nullptr,
+        nullptr
+    );
 
     if(window == nullptr)
     {
@@ -104,7 +108,6 @@ int main()
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // Initialize GLAD
     if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cerr << "Failed to initialize GLAD.\n";
@@ -131,9 +134,14 @@ int main()
         return -1;
     }
 
+    const int projectionLoc = glGetUniformLocation(ourShader.ID, "projection");
+
+    const int viewLoc = glGetUniformLocation(ourShader.ID, "view");
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
     // Upload cube geometry and configure the position attribute.
     unsigned int VBO, VAO, EBO;
@@ -153,7 +161,6 @@ int main()
 
     FrameTimer frameTimer;
 
-    // Main loop
     while(!glfwWindowShouldClose(window))
     {   
         const float currentFrame =
@@ -168,16 +175,13 @@ int main()
         );
         cameraController.updateFollow(game, deltaTime);
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         ourShader.use();
 
         glm::mat4 projection = glm::perspective(glm::radians(cameraController.getZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        int projectionLoc = glGetUniformLocation(ourShader.ID, "projection");
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         glm::mat4 view = cameraController.getViewMatrix();
-        int viewLoc = glGetUniformLocation(ourShader.ID, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
         game.update(currentFrame, deltaTime);

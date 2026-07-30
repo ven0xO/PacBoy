@@ -44,6 +44,12 @@ height(heighti)
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    projectionLocation =
+        glGetUniformLocation(shader.ID, "projection");
+
+    hudColorLocation =
+        glGetUniformLocation(shader.ID, "hudColor");
 }
 
 Hud::~Hud()
@@ -57,6 +63,33 @@ Hud::~Hud()
     {
         glDeleteVertexArrays(1, &VAO);
     }
+}
+
+void Hud::beginRender()
+{
+    shader.use();
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    const glm::mat4 projection = glm::ortho(
+        0.0f,
+        static_cast<float>(width),
+        static_cast<float>(height),
+        0.0f
+    );
+
+    glUniformMatrix4fv(
+        projectionLocation,
+        1,
+        GL_FALSE,
+        glm::value_ptr(projection)
+    );
+}
+
+void Hud::endRender()
+{
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }
 
 void Hud::render(const GameState& state)
@@ -96,18 +129,14 @@ void Hud::drawRectangle(float x, float y, float rectangleWidth,
                         float alpha)
 {
     float vertices[] = {
-        // first triangle
         x,                  y,
         x + rectangleWidth, y,
         x + rectangleWidth, y + rectangleHeight,
 
-        // second triangle
         x,                  y,
         x + rectangleWidth, y + rectangleHeight,
         x,                  y + rectangleHeight
     };
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
     glBufferSubData(
         GL_ARRAY_BUFFER,
@@ -116,41 +145,15 @@ void Hud::drawRectangle(float x, float y, float rectangleWidth,
         vertices
     );
 
-    glm::mat4 projection = glm::ortho(
-        0.0f,
-        static_cast<float>(width),
-        static_cast<float>(height),
-        0.0f
-    );
-
-    shader.use();
-
-    int projectionLocation =
-        glGetUniformLocation(shader.ID, "projection");
-
-    glUniformMatrix4fv(
-        projectionLocation,
-        1,
-        GL_FALSE,
-        glm::value_ptr(projection)
-    );
-
-    int colorLocation = 
-        glGetUniformLocation(shader.ID, "hudColor");
-
     glUniform4f(
-        colorLocation,
+        hudColorLocation,
         color.x,
         color.y,
         color.z,
         alpha
     );
 
-    glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void Hud::renderText(

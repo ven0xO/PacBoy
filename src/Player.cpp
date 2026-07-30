@@ -1,12 +1,13 @@
 #include "Player.hpp"
+#include "GameState.hpp"
 #include "Grid.hpp"
-#include <glm/glm.hpp>
-#include <cmath>
 
+#include <glm/glm.hpp>
+
+#include <cmath>
 
 Player::Player(float x, float y, GameState& state)
     : gameState(state),
-      position(x, y),
       color(1.0f, 1.0f, 0.0f),
       visual_position(x, y),
       curr_direction(1.0f, 0.0f),
@@ -14,23 +15,6 @@ Player::Player(float x, float y, GameState& state)
       camera_direction(1.0f, 0.0f),
       initialPosition(x, y)
 {
-}
-
-void Player::moveUp()
-{
-    position.y -= 1.0f; // Grid y=0 is the top row.
-}
-void Player::moveDown()
-{
-    position.y += 1.0f;
-}
-void Player::moveRight()
-{
-    position.x += 1.0f;
-}
-void Player::moveLeft()
-{
-    position.x -= 1.0f;
 }
 
 bool Player::collectPellet(int x, int y, Grid& grid)
@@ -150,22 +134,13 @@ bool Player::update(Grid& grid, float deltaTime)
 
 void Player::setPosition(float x, float y)
 {
-    position.x = x;
-    position.y = y;
-
     visual_position.x = x;
     visual_position.y = y;
 }
 
 void Player::setPosition(const glm::vec2& pos)
 {
-    position = pos;
     visual_position = pos;
-}
-
-void Player::setCollided(bool collidedValue)
-{
-    collided = collidedValue;
 }
 
 void Player::killGhost()
@@ -188,7 +163,6 @@ void Player::resetPlayer()
     curr_direction = glm::vec2(0.0f, 0.0f);
     target_direction = glm::vec2(0.0f, 0.0f);
     camera_direction = glm::vec2(1.0f, 0.0f);
-    collided = false;
     energizer = false;
     multiplier = 0;
 }

@@ -4,8 +4,8 @@
 #include "Player.hpp"
 #include "Enemy.hpp"
 #include "GameState.hpp"
-#include "Rect.hpp"
 #include "Scoreboard.hpp"
+#include "GameInput.hpp"
 
 #include <array>
 #include <cstddef>
@@ -13,10 +13,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <glm/glm.hpp>
-//...
-
-#include "GameInput.hpp"
 
 enum class GamePhase
 {

@@ -3,7 +3,6 @@
 #include "../external/camera.h"
 
 #include <glm/glm.hpp>
-#include <glm/mat4x4.hpp>
 
 class Game;
 

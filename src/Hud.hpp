@@ -6,7 +6,6 @@
 
 class GameState;
 class Scoreboard;
-class Shader;
 
 class Hud
 {
@@ -15,6 +14,8 @@ public:
     ~Hud();
     bool isValid() const { return shader.isValid(); }
 
+    void beginRender();
+    void endRender();
     void render(const GameState& state);
     void renderMainMenu(int selected);
     void renderReady();
@@ -50,4 +51,6 @@ private:
     Shader shader;
     int width;
     int height;
+    int projectionLocation{-1};
+    int hudColorLocation{-1};
 };

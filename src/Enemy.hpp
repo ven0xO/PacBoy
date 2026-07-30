@@ -1,9 +1,12 @@
 #pragma once
+
 #include <glm/glm.hpp>
-#include "Grid.hpp"
-#include "Rect.hpp"
+
 #include <cstddef>
 
+#include "Rect.hpp"
+
+class Grid;
 class Player;
 
 enum class State
@@ -39,7 +42,6 @@ public:
     glm::vec2 get_spawn_point() const {return spawn_point;}
     State get_state() const {return state;}
     const glm::vec3& getColor() const { return color; }
-    const glm::vec2& getTarget() const { return target; }
 
     void set_red_ghost(const Enemy& red_ghost_v);
     void set_state_dead()

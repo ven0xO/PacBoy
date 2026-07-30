@@ -16,11 +16,7 @@ GameRenderer::GameRenderer(int width, int height)
 
 }
 
-void GameRenderer::renderGrid(
-    const Grid& grid,
-    Shader& shader,
-    unsigned int cubeVAO
-)
+void GameRenderer::renderGrid(const Grid& grid)
 {
     for(int y{}; y < grid.getHeight(); y++)
     {
@@ -39,36 +35,54 @@ void GameRenderer::renderGrid(
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(x, 0.0f, y));
 
-            int modelLoc = glGetUniformLocation(shader.ID, "model");
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 
-            int objectColorLoc = glGetUniformLocation(shader.ID, "objectColor");
             switch (tile) {
                 case Tile::Wall:
-                    glUniform3f(objectColorLoc, 0.0f, 0.0f, 1.0f); // blue
+                    glUniform3f(objectColorLocation, 0.0f, 0.0f, 1.0f);
                     break;
                 case Tile::Pellet:
-                    glUniform3f(objectColorLoc, 1.0f, 1.0f, 0.0f); // yellow
+                    glUniform3f(objectColorLocation, 1.0f, 1.0f, 0.0f);
                     break;
                 case Tile::Energizer:
-                    glUniform3f(objectColorLoc, 1.0f, 0.0f, 1.0f); // purple
+                    glUniform3f(objectColorLocation, 1.0f, 0.0f, 1.0f);
                     break;
                 case Tile::GhostSpawnEntrance:
-                    glUniform3f(objectColorLoc, 1.0f, 0.0f, 0.0f); // red
+                    glUniform3f(objectColorLocation, 1.0f, 0.0f, 0.0f);
                     break;
             }
             
-            glBindVertexArray(cubeVAO);
             glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
         }
     }
 }
 
-void GameRenderer::renderPlayer(
-    const Player& player,
-    Shader& shader,
-    unsigned int cubeVAO
-)
+void GameRenderer::cacheUniformLocations(const Shader& shader)
+{
+    if (cachedShaderId == shader.ID)
+    {
+        return;
+    }
+
+    modelLocation = glGetUniformLocation(shader.ID, "model");
+    objectColorLocation = glGetUniformLocation(shader.ID, "objectColor");
+
+    cachedShaderId = shader.ID;
+}
+
+void GameRenderer::beginHudPass()
+{
+    glDisable(GL_DEPTH_TEST);
+    hud.beginRender();
+}
+
+void GameRenderer::endHudPass()
+{
+    hud.endRender();
+    glEnable(GL_DEPTH_TEST);
+}
+
+void GameRenderer::renderPlayer(const Player& player)
 {
     const glm::vec2 position = player.getPosition();
     const glm::vec3& color = player.getColor();
@@ -77,21 +91,14 @@ void GameRenderer::renderPlayer(
     model = glm::translate(model, glm::vec3(position.x, 0.1f, position.y));
     model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
     
-    int modelLoc = glGetUniformLocation(shader.ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
     
-    int objectColorLoc = glGetUniformLocation(shader.ID, "objectColor");
-    glUniform3f(objectColorLoc, color.r, color.g, color.b);
+    glUniform3f(objectColorLocation, color.r, color.g, color.b);
     
-    glBindVertexArray(cubeVAO);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 
-void GameRenderer::renderEnemy(
-    const Enemy& enemy,
-    Shader& shader,
-    unsigned int cubeVAO
-)
+void GameRenderer::renderEnemy(const Enemy& enemy)
 {
     const glm::vec2 position = enemy.get_position();
     const glm::vec3& color = enemy.getColor();
@@ -100,51 +107,25 @@ void GameRenderer::renderEnemy(
     model = glm::translate(model, glm::vec3(position.x, 0.1f, position.y));
     model = glm::scale(model, glm::vec3(0.8f, 0.8f, 0.8f));
 
-    int modelLoc = glGetUniformLocation(shader.ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 
-    int objectColorLoc = glGetUniformLocation(shader.ID, "objectColor");
-    glUniform3f(objectColorLoc, color.r, color.g, color.b);
+    glUniform3f(objectColorLocation, color.r, color.g, color.b);
 
-    glBindVertexArray(cubeVAO);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 
-void GameRenderer::renderTargetBeam(const Enemy& enemy, Shader& shader, unsigned int cubeVAO)
+void GameRenderer::render(
+    const Game& game,
+    const Shader& shader,
+    unsigned int cubeVAO
+)
 {
-    glm::vec2 beam = enemy.getTarget() - enemy.get_position();
-    float beam_length = glm::length(beam);
-
-    if (beam_length < 0.001f)
-    {
-        return;
-    }
-
-    glm::vec2 beam_center = enemy.get_position() + beam * 0.5f;
-    float beam_angle = -std::atan2(beam.y, beam.x);
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(beam_center.x, 0.65f, beam_center.y));
-    model = glm::rotate(model, beam_angle, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(beam_length, 0.06f, 0.06f));
-
-    int modelLoc = glGetUniformLocation(shader.ID, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-    int objectColorLoc = glGetUniformLocation(shader.ID, "objectColor");
-    glUniform3f(objectColorLoc, enemy.getColor().r, enemy.getColor().g, enemy.getColor().b);
-
-    glBindVertexArray(cubeVAO);
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-}
-
-void GameRenderer::render(const Game& game, Shader& shader, unsigned int cubeVAO)
-{
+    cacheUniformLocations(shader);
     const GamePhase phase = game.getPhase();
 
     if (phase == GamePhase::MainMenu)
     {
-        glDisable(GL_DEPTH_TEST);
+        beginHudPass();
 
         hud.renderMainMenu(
             static_cast<int>(
@@ -152,46 +133,37 @@ void GameRenderer::render(const Game& game, Shader& shader, unsigned int cubeVAO
             )
         );
 
-        glEnable(GL_DEPTH_TEST);
+        endHudPass();
         return;
     }
 
     if (phase == GamePhase::Scoreboard)
     {
-        glDisable(GL_DEPTH_TEST);
+        beginHudPass();
 
         hud.renderScoreboard(
             game.getScoreboard()
         );
 
-        glEnable(GL_DEPTH_TEST);
+        endHudPass();
         return;
     }
 
-    renderGrid(
-        game.getGrid(),
-        shader,
-        cubeVAO
-    );
+    glBindVertexArray(cubeVAO);
 
-    renderPlayer(
-        game.getPlayer(),
-        shader,
-        cubeVAO
-    );
+    renderGrid(game.getGrid());
+
+    renderPlayer(game.getPlayer());
 
     const auto enemies = game.getEnemies();
 
     for (const auto& enemy : enemies)
     {
-        renderEnemy(
-            enemy.get(),
-            shader,
-            cubeVAO
-        );
+        renderEnemy(enemy.get());
     }
 
-    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(0);
+    beginHudPass();
 
     const GameState& state = game.getGameState();
 
@@ -228,5 +200,5 @@ void GameRenderer::render(const Game& game, Shader& shader, unsigned int cubeVAO
         );
     }
 
-    glEnable(GL_DEPTH_TEST);
+    endHudPass();
 }

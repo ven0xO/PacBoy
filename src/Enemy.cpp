@@ -1,4 +1,5 @@
 #include "Enemy.hpp"
+#include "Grid.hpp"
 #include "Player.hpp"
 
 #include <random>
