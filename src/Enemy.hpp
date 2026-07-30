@@ -40,9 +40,22 @@ public:
     {
         return spawn_point;
     }
+    glm::vec2 getDirection() const
+    {
+        return direction;
+    }
     State get_state() const
     {
         return state;
+    }
+    float getScaredTimeRemaining(float timer) const
+    {
+        if (state != State::Scared || timer >= scaredUntil)
+        {
+            return 0.0f;
+        }
+
+        return scaredUntil - timer;
     }
     const glm::vec3& getColor() const
     {

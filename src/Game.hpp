@@ -93,6 +93,10 @@ public:
     {
         return enteredName;
     }
+    float getGameplayTimer() const
+    {
+        return gameplayTimer;
+    }
 
 private:
     Grid gameGrid;

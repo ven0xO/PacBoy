@@ -33,6 +33,13 @@ private:
                     glm::vec3 textColor = glm::vec3(1.0f, 1.0f, 0.0f));
     void drawRectangle(float x, float y, float rectangleWidth, float rectangleHeight,
                        glm::vec3 color, float alpha = 1.0f);
+    void drawPanel(float x, float y, float panelWidth, float panelHeight,
+                   const glm::vec3& borderColor, const glm::vec3& fillColor,
+                   float borderThickness = 4.0f, float fillAlpha = 1.0f);
+    void drawSelection(float x, float y, float selectionWidth, float selectionHeight,
+                       const glm::vec3& accentColor);
+    float textWidth(const std::string& text, float scale) const;
+    float centeredX(const std::string& text, float scale) const;
 
     unsigned int VAO{0};
     unsigned int VBO{0};

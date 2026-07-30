@@ -39,26 +39,59 @@ namespace
 
 int main()
 {
-    // Shared cube mesh used for tiles and characters.
-    float vertices[] = {// Front face
-                        -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f,
+    struct CubeVertex
+    {
+        float x;
+        float y;
+        float z;
+        float normalX;
+        float normalY;
+        float normalZ;
+    };
 
-                        // Back face
-                        -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f,
-                        -0.5f};
+    // Shared cube mesh. Every face has its own vertices so it can have a flat normal.
+    const CubeVertex vertices[] = {
+        // Position                    // Normal
+        // Front
+        {-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f},
+        {0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f},
+        {0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f},
+        {-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f},
+        // Back
+        {0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f},
+        {-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f},
+        {-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f},
+        {0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f},
+        // Left
+        {-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f},
+        {-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f},
+        {-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f},
+        {-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f},
+        // Right
+        {0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f},
+        {0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f},
+        {0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f},
+        {0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f},
+        // Bottom
+        {-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f},
+        {0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f},
+        {0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f},
+        {-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f},
+        // Top
+        {-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f},
+        {0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f},
+        {0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f},
+        {-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f},
+    };
 
-    unsigned int indices[] = {// Front face
-                              0, 1, 2, 2, 3, 0,
-                              // Back face
-                              4, 5, 6, 6, 7, 4,
-                              // Left face
-                              4, 7, 3, 3, 0, 4,
-                              // Right face
-                              1, 5, 6, 6, 2, 1,
-                              // Bottom face
-                              0, 1, 5, 5, 4, 0,
-                              // Top face
-                              3, 2, 6, 6, 7, 3};
+    const unsigned int indices[] = {
+        0,  1,  2,  2,  3,  0,  // Front
+        4,  5,  6,  6,  7,  4,  // Back
+        8,  9,  10, 10, 11, 8,  // Left
+        12, 13, 14, 14, 15, 12, // Right
+        16, 17, 18, 18, 19, 16, // Bottom
+        20, 21, 22, 22, 23, 20, // Top
+    };
 
     if (!glfwInit())
     {
@@ -117,9 +150,9 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.005f, 0.008f, 0.025f, 1.0f);
 
-    // Upload cube geometry and configure the position attribute.
+    // Upload cube geometry and configure position and normal attributes.
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -132,8 +165,14 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(CubeVertex), nullptr);
     glEnableVertexAttribArray(0);
+
+    // OpenGL represents a byte offset into the currently bound VBO as a pointer.
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    const void* normalOffset = reinterpret_cast<void*>(3 * sizeof(float));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(CubeVertex), normalOffset);
+    glEnableVertexAttribArray(1);
 
     FrameTimer frameTimer;
 
@@ -157,7 +196,7 @@ int main()
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
         game.update(currentFrame, deltaTime);
-        gameRenderer.render(game, ourShader, VAO);
+        gameRenderer.render(game, ourShader, VAO, currentFrame);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
