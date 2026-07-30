@@ -4,4 +4,5 @@ build
 PacBoy.exe
 .gitignore
 TODO.txt
+CMakeUserPresets.json
 /assets/scores/scores.json

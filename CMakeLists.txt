@@ -1,15 +1,24 @@
-cmake_minimum_required(VERSION 3.14)
+# Support CMake 3.20+ and use policies tested through CMake 3.28.
+cmake_minimum_required(VERSION 3.20...3.28)
 project(PacBoy VERSION 0.1.0)
 
-# C++ 17 as standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+option(
+    PACBOY_ENABLE_WARNINGS
+    "Enable strict compiler warnings"
+    ON
+)
 
-# exit path
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
+option(
+    PACBOY_ENABLE_SANITIZERS
+    "Enable AddressSanitizer and UndefinedBehaviorSanitizer"
+    OFF
+)
 
-# set as .exe
-set(CMAKE_EXECUTABLE_SUFFIX ".exe")
+option(
+    PACBOY_ENABLE_CLANG_TIDY
+    "Run clang-tidy during compilation"
+    OFF
+)
 
 # required libraries
 find_package(OpenGL REQUIRED)
@@ -42,21 +51,29 @@ set(SOURCES
     src/FrameTimer.cpp
 )
 
-# headers
-include_directories(
+# create exe
+add_executable(${PROJECT_NAME} ${SOURCES})
+
+target_compile_features(
+    ${PROJECT_NAME}
+    PRIVATE
+    cxx_std_17
+)
+
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE
     ${CMAKE_SOURCE_DIR}/external/GLAD/include
     ${CMAKE_SOURCE_DIR}/external
 )
 
-# create exe
-add_executable(${PROJECT_NAME} ${SOURCES})
-
 # linking
 target_link_libraries(
     ${PROJECT_NAME}
+    PRIVATE
     OpenGL::GL
     glfw
-    dl
+    ${CMAKE_DL_LIBS}
     nlohmann_json::nlohmann_json
 )
 
@@ -72,6 +89,12 @@ if(BUILD_TESTING)
         src/GameState.cpp
         src/Game.cpp
         src/Scoreboard.cpp
+    )
+
+    target_compile_features(
+        enemy_regression_tests
+        PRIVATE
+        cxx_std_17
     )
 
     target_include_directories(
@@ -92,11 +115,6 @@ if(BUILD_TESTING)
         TEST_LEVEL_PATH="${CMAKE_SOURCE_DIR}/assets/levels/classic_inspired.txt"
     )
 
-    set_target_properties(
-        enemy_regression_tests
-        PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-
     add_test(
         NAME enemy_regression
         COMMAND enemy_regression_tests
@@ -104,5 +122,38 @@ if(BUILD_TESTING)
 
 endif()
 
-# shaders
-file(COPY ${CMAKE_SOURCE_DIR}/shaders DESTINATION ${CMAKE_SOURCE_DIR})
+add_custom_target(
+    copy_runtime_resources ALL
+
+    COMMAND
+        ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
+        "${CMAKE_CURRENT_BINARY_DIR}/shaders"
+
+    COMMAND
+        ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/levels"
+        "${CMAKE_CURRENT_BINARY_DIR}/assets/levels"
+
+    COMMAND
+        ${CMAKE_COMMAND} -E make_directory
+        "${CMAKE_CURRENT_BINARY_DIR}/assets/scores"
+
+    COMMENT "Copying runtime resources"
+    VERBATIM
+)
+
+install(
+    TARGETS ${PROJECT_NAME}
+    RUNTIME DESTINATION "."
+)
+
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/shaders/"
+    DESTINATION "shaders"
+)
+
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/levels/"
+    DESTINATION "assets/levels"
+)
